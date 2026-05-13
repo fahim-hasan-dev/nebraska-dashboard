@@ -14,29 +14,27 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider className="no-scrollbar">
+    <SidebarProvider className="no-scrollbar bg-[#f8f9fa]">
       {/* dashboard sidebar */}
-      <AppSidebar className="p-4 pr-0" />
-      <SidebarInset className="bg-transparent p-4 gap-4">
+      <AppSidebar />
+      <SidebarInset className="bg-transparent flex flex-col min-h-screen">
         {/* dashboard header */}
-        <header className="flex h-20 py-2 bg-white rounded-xl border shadow-sm shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-20 sticky top-4 z-50">
-          <div className="flex flex-nowrap items-center gap-2 px-4">
+        <header className="flex h-20 bg-white border-b border-gray-200 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear sticky top-0 z-50 px-6">
+          <div className="flex items-center gap-2">
             <SidebarTrigger className="xl:hidden -ml-1" />
-            <DashboardBreadcrumb />
+            {/* The breadcrumb might not be needed according to the design, but let's keep it just in case or hidden. For now, let's keep it. */}
           </div>
           {/* searchbar */}
-          <div className="flex justify-center items-center gap-4 md:gap-6">
-            <SearchBar />
-            {/* notification */}
-            {/* <Button size={"icon"} className="rounded-full">
-              <Bell />
-            </Button> */}
-            {/* user dropdown */}
-            <NavUserWrapper />
+          <div className="flex items-center gap-4 md:gap-6">
+            {/* Keeping these commented out as they don't appear in the design */}
+            {/* <SearchBar /> */}
+            {/* <NavUserWrapper /> */}
           </div>
         </header>
         {/* dashboard content */}
-        <div className="rounded-xl flex-1">{children}</div>
+        <main className="flex-1 p-8">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

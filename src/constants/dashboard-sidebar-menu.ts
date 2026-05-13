@@ -1,45 +1,69 @@
 import {
-  Blocks,
-  ChartNoAxesCombined,
+  Calendar,
+  File,
+  FileText,
   Handshake,
-  MessagesSquare,
+  Headphones,
+  MessageSquare,
   Settings,
-  Shield,
-  UsersRound,
+  ShieldCheck,
+  Star,
+  Trophy,
+  UserPlus,
 } from "lucide-react";
 
 export const sidebarMenu = {
   navMain: [
     {
-      title: "Analytics",
-      url: "/",
-      icon: ChartNoAxesCombined,
+      title: "Events",
+      url: "/events",
+      icon: Calendar,
       isActive: true,
     },
     {
-      title: "Products",
-      url: "/products",
-      icon: Blocks,
+      title: "Driver Requests",
+      url: "/driver-requests",
+      icon: UserPlus,
     },
     {
-      title: "Users",
-      url: "/users",
-      icon: UsersRound,
+      title: "Results",
+      url: "/results",
+      icon: Trophy,
     },
     {
-      title: "Moderation",
-      url: "/moderation",
-      icon: Shield,
+      title: "Standings",
+      url: "/standings",
+      icon: Star,
     },
     {
-      title: "Messaging",
-      url: "/messaging",
-      icon: MessagesSquare,
+      title: "Messages",
+      url: "/messages",
+      icon: MessageSquare,
     },
     {
-      title: "Support",
-      url: "/support",
+      title: "Sponsors",
+      url: "/sponsors",
       icon: Handshake,
+    },
+    {
+      title: "Sponsor Applications",
+      url: "/sponsor-applications",
+      icon: FileText,
+    },
+    {
+      title: "Rulebook",
+      url: "/rulebook",
+      icon: ShieldCheck,
+    },
+    {
+      title: "Legal",
+      url: "/legal",
+      icon: File,
+    },
+    {
+      title: "Help & Support",
+      url: "/help-support",
+      icon: Headphones,
     },
   ],
   settings: [
@@ -58,3 +82,4 @@ export const profileData = {
   avatar:
     "https://images.unsplash.com/photo-1633332755192-727a05c4013d?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dXNlcnxlbnwwfHwwfHx8MA%3D%3D",
 };
+
