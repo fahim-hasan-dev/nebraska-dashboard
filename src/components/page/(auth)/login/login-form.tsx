@@ -1,27 +1,21 @@
 "use client";
 
+import { AuthWrapper } from "../AuthWrapper";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Image from "next/image";
 import { useState } from "react";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function LoginForm({
   className,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"form">) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const router = useRouter();
   const redirect = useSearchParams().get("redirect");
@@ -49,92 +43,73 @@ export function LoginForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="py-4 md:px-20 shadow-none border-none bg-white/60 backdrop-blur-xl">
-        <CardHeader className="text-center">
-          <figure className="flex justify-center mb-4 h-24">
-            <Image src={"/logo.svg"} alt="logo" width={180} height={100} />
-          </figure>
-          <CardTitle className="text-2xl">Log in to your account</CardTitle>
-          <CardDescription className="pt-2 text-primary-foreground">
-            Please enter your email and password to continue
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-6">
-              <div className="grid gap-6">
-                {/* email */}
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="me@example.com"
-                    required
-                    className="bg-white border-none shadow-none"
-                  />
-                </div>
-                {/* password */}
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                  </div>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      name="password"
-                      type={`${isPasswordVisible ? "text" : "password"}`}
-                      placeholder="Enter password"
-                      required
-                      className="bg-white border-none shadow-none"
-                    />
-                    <span
-                      onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                      className="text-slate-400 absolute right-3 top-3 cursor-pointer"
-                    >
-                      {isPasswordVisible ? <EyeOffIcon /> : <EyeIcon />}
-                    </span>
-                  </div>
-                </div>
-                {/* remember checkbox */}
-                <div className="flex flex-col md:flex-row justify-between gap-2 items-center">
-                  <div className="flex items-center space-x-2">
-                    {/* <Checkbox id="terms" className="size-5" />
-                    <label
-                      htmlFor="terms"
-                      className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Remember Password
-                    </label> */}
-                  </div>
-                  <Link
-                    href="forgot-password"
-                    className="text-sm text-primary-foreground font-medium underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </Link>
-                </div>
-                {/* submit button */}
-                <Button type="submit" className="w-full">
-                  Sign In
-                </Button>
-              </div>
-              {/* link to sign up */}
-              {/* <div className="text-center text-sm md:mt-6">
-                Don&apos;t have any account?{" "}
-                <Link
-                  href="/sign-up"
-                  className="font-medium text-primary-foreground hover:underline underline-offset-4"
-                >
-                  Sign Up
-                </Link>
-              </div> */}
+    <AuthWrapper title="Welcome Back" subtitle="Login to your account">
+      <form onSubmit={handleSubmit} className={cn("space-y-6", className)} {...props}>
+        <div className="space-y-5">
+          {/* Email field */}
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-[14px] font-medium text-[#374151]">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Enter your full name"
+              required
+              className="w-full h-12 px-4 border border-[#E5E7EB] rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+            />
+          </div>
+
+          {/* Password field */}
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-[14px] font-medium text-[#374151]">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={isPasswordVisible ? "text" : "password"}
+                placeholder="Enter your full name"
+                required
+                className="w-full h-12 px-4 border border-[#E5E7EB] rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+              />
+              <button
+                type="button"
+                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {isPasswordVisible ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
+              </button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          </div>
+
+          {/* Remember & Forgot Password */}
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-center space-x-2">
+              <Checkbox id="remember" className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <Label 
+                htmlFor="remember" 
+                className="text-[14px] font-medium text-[#111827] cursor-pointer select-none"
+              >
+                Remember Password
+              </Label>
+            </div>
+            <Link
+              href="/forgot-password"
+              className="text-[14px] font-medium text-[#111827] hover:text-blue-600 transition-colors underline underline-offset-4"
+            >
+              Forgot Password
+            </Link>
+          </div>
+
+          {/* Submit Button */}
+          <Button 
+            type="submit" 
+            className="w-full h-12 bg-[#3B82F6] hover:bg-blue-700 text-white font-bold text-[16px] rounded-lg transition-all shadow-sm active:scale-[0.98]"
+          >
+            Login
+          </Button>
+        </div>
+      </form>
+    </AuthWrapper>
   );
 }
+

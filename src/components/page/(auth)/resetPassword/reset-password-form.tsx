@@ -2,16 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Image from "next/image";
 import { useState } from "react";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { z } from "zod";
@@ -26,6 +18,7 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
+import { AuthWrapper } from "../AuthWrapper";
 
 // zod schema for form validation
 const FormSchema = z
@@ -79,100 +72,92 @@ export function ResetPasswordForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="py-4 md:px-20 md:py-12 shadow-none border-none bg-white/60 backdrop-blur-xl">
-        <CardHeader className="text-center">
-          <figure className="flex justify-center mb-4 h-20">
-            <Image src={"/logo.svg"} alt="logo" width={180} height={100} />
-          </figure>
-          <CardTitle className="text-2xl">Reset Password</CardTitle>
-          <CardDescription className="pt-2 text-primary-foreground">
-            Please enter your new password to continue
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="grid gap-6">
-                {/* new password */}
-                <FormField
-                  control={form.control}
-                  name="newPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center">
-                        <Label htmlFor="password">New Password</Label>
-                      </div>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            id="password"
-                            type={`${isPasswordVisible ? "text" : "password"}`}
-                            placeholder="Enter password"
-                            className="bg-white border-none shadow-none"
-                            {...field}
-                          />
-                          <span
-                            onClick={() =>
-                              setIsPasswordVisible(!isPasswordVisible)
-                            }
-                            className="text-slate-400 absolute right-3 top-3 cursor-pointer"
-                          >
-                            {isPasswordVisible ? <EyeOffIcon /> : <EyeIcon />}
-                          </span>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {/* confirm new password */}
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center">
-                        <Label htmlFor="conf-password">Confirm Password</Label>
-                      </div>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            id="conf-password"
-                            type={`${
-                              isConfPasswordVisible ? "text" : "password"
-                            }`}
-                            placeholder="Enter password"
-                            className="bg-white border-none shadow-none"
-                            {...field}
-                          />
-                          <span
-                            onClick={() =>
-                              setIsConfPasswordVisible(!isConfPasswordVisible)
-                            }
-                            className="text-slate-400 absolute right-3 top-3 cursor-pointer"
-                          >
-                            {isConfPasswordVisible ? (
-                              <EyeOffIcon />
-                            ) : (
-                              <EyeIcon />
-                            )}
-                          </span>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {/* submit button */}
-                <Button type="submit" className="w-full">
-                  Reset
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthWrapper title="Set New Password" subtitle="Create a new password for your account.">
+      <div className={cn("space-y-6", className)} {...props}>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            {/* new password */}
+            <FormField
+              control={form.control}
+              name="newPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <Label htmlFor="password" className="text-[14px] font-medium text-[#374151]">Password</Label>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={isPasswordVisible ? "text" : "password"}
+                        placeholder="Enter your password"
+                        className="w-full h-12 px-4 border border-[#E5E7EB] rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {isPasswordVisible ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* confirm new password */}
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <Label htmlFor="conf-password" className="text-[14px] font-medium text-[#374151]">Confirm Password</Label>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        id="conf-password"
+                        type={isConfPasswordVisible ? "text" : "password"}
+                        placeholder="Re-enter your password"
+                        className="w-full h-12 px-4 border border-[#E5E7EB] rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsConfPasswordVisible(!isConfPasswordVisible)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {isConfPasswordVisible ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Action Buttons */}
+            <div className="space-y-4 pt-4">
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-[#3B82F6] hover:bg-blue-700 text-white font-bold text-[16px] rounded-lg transition-all shadow-sm active:scale-[0.98]"
+              >
+                Confirm
+              </Button>
+              
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => router.push('/login')}
+                className="w-full h-12 bg-white border border-[#E5E7EB] hover:bg-gray-50 text-[#374151] font-medium text-[16px] rounded-lg transition-all shadow-sm"
+              >
+                Back to Sign in
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </AuthWrapper>
   );
 }
+

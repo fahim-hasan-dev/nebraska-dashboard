@@ -2,14 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import Image from "next/image";
+import { AuthWrapper } from "../AuthWrapper";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import toast from "react-hot-toast";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -29,12 +22,14 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { useEffect, useState } from "react";
 
 const FormSchema = z.object({
   oneTimeCode: z.string().min(5, {
     message: "Your one-time password must be 5 digits.",
   }),
 });
+
 export function OtpVerifyForm({
   className,
   ...props
@@ -42,6 +37,21 @@ export function OtpVerifyForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams?.get("email");
+  const [timeLeft, setTimeLeft] = useState(56); // Example starting time from screenshot
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')} : ${secs.toString().padStart(2, '0')}`;
+  };
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -50,11 +60,6 @@ export function OtpVerifyForm({
     },
   });
 
-  // if (!email) {
-  //   redirect("/forgot-password");
-  // }
-
-  // handle form submit
   const onSubmit = async (values: z.infer<typeof FormSchema>) => {
     toast.loading("Verifying...", {
       id: "verify-otp-toast",
@@ -67,8 +72,6 @@ export function OtpVerifyForm({
     console.log(payload);
 
     try {
-      //! perform your api call here...
-
       toast.success("OTP verified successfully", { id: "verify-otp-toast" });
       router.push(`/reset-password?auth=demoAuthToken`);
     } catch (error: unknown) {
@@ -76,8 +79,8 @@ export function OtpVerifyForm({
     }
   };
 
-  // handle resend otp
   const handleResend = async () => {
+    if (timeLeft > 0) return;
     toast.loading("Sending...", {
       id: "resend-otp-toast",
     });
@@ -89,6 +92,7 @@ export function OtpVerifyForm({
 
       if (res?.success) {
         toast.success(res?.message as string, { id: "resend-otp-toast" });
+        setTimeLeft(60);
       } else {
         toast.error(res?.message || "Failed to resend", {
           id: "resend-otp-toast",
@@ -100,70 +104,74 @@ export function OtpVerifyForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="py-4 md:px-20 md:py-12 shadow-none border-none bg-white/60 backdrop-blur-xl">
-        <CardHeader className="text-center">
-          <figure className="flex justify-center pb-4 h-24">
-            <Image src={"/logo.svg"} alt="logo" width={180} height={100} />
-          </figure>
-          <CardTitle className="text-2xl">Verification code</CardTitle>
-          <CardDescription className="pt-2 text-primary-foreground">
-            We sent a reset link to <strong>{email}</strong>. Enter 5 digit code
-            that is mentioned in the email.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)}>
-                <div className="grid gap-6">
-                  {/* email */}
-                  <div className="grid gap-2 mt-2">
-                    <FormField
-                      control={form.control}
-                      name="oneTimeCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <InputOTP
-                              maxLength={5}
-                              pattern={REGEXP_ONLY_DIGITS}
-                              {...field}
-                            >
-                              <InputOTPGroup className="w-full justify-center gap-2 md:gap-6">
-                                <InputOTPSlot index={0} />
-                                <InputOTPSlot index={1} />
-                                <InputOTPSlot index={2} />
-                                <InputOTPSlot index={3} />
-                                <InputOTPSlot index={4} />
-                              </InputOTPGroup>
-                            </InputOTP>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  {/* submit button */}
-                  <Button type="submit" className="w-full">
-                    Sign In
-                  </Button>
-                </div>
-              </form>
-            </Form>
-            {/* link to sign up */}
-            <div className="text-center text-sm mt-6">
-              You have not received the email?{" "}
-              <span
-                onClick={handleResend}
-                className="font-medium text-primary-foreground hover:underline underline-offset-4"
+    <AuthWrapper 
+      title="Verify Reset Password" 
+      subtitle="Enter the code sent to your email to reset your password."
+    >
+      <div className={cn("space-y-6", className)} {...props}>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="oneTimeCode"
+              render={({ field }) => (
+                <FormItem className="flex flex-col items-center">
+                  <FormControl>
+                    <InputOTP
+                      maxLength={5}
+                      pattern={REGEXP_ONLY_DIGITS}
+                      {...field}
+                    >
+                      <InputOTPGroup className="gap-3">
+                        <InputOTPSlot index={0} className="w-16 h-16 text-2xl font-bold border-[#E5E7EB] rounded-lg" />
+                        <InputOTPSlot index={1} className="w-16 h-16 text-2xl font-bold border-[#E5E7EB] rounded-lg" />
+                        <InputOTPSlot index={2} className="w-16 h-16 text-2xl font-bold border-[#E5E7EB] rounded-lg" />
+                        <InputOTPSlot index={3} className="w-16 h-16 text-2xl font-bold border-[#E5E7EB] rounded-lg" />
+                        <InputOTPSlot index={4} className="w-16 h-16 text-2xl font-bold border-[#E5E7EB] rounded-lg" />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="space-y-4">
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-[#3B82F6] hover:bg-blue-700 text-white font-bold text-[16px] rounded-lg transition-all shadow-sm active:scale-[0.98]"
               >
-                Resend
-              </span>
+                Verify Code
+              </Button>
+              
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => router.push('/login')}
+                className="w-full h-12 bg-white border border-[#E5E7EB] hover:bg-gray-50 text-[#374151] font-medium text-[16px] rounded-lg transition-all shadow-sm"
+              >
+                Back to Sign in
+              </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </form>
+        </Form>
+
+        <div className="text-center">
+          <p className="text-[14px] text-gray-500">
+            {timeLeft > 0 ? (
+              <>Resend code in <span className="font-medium text-gray-900">{formatTime(timeLeft)}</span></>
+            ) : (
+              <button 
+                onClick={handleResend}
+                className="text-blue-600 font-medium hover:underline transition-all"
+              >
+                Resend code
+              </button>
+            )}
+          </p>
+        </div>
+      </div>
+    </AuthWrapper>
   );
 }
+

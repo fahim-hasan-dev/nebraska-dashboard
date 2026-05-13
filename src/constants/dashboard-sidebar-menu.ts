@@ -5,9 +5,7 @@ import {
   Handshake,
   Headphones,
   MessageSquare,
-  Settings,
   ShieldCheck,
-  Star,
   Trophy,
   UserPlus,
 } from "lucide-react";
@@ -62,13 +60,7 @@ export const sidebarMenu = {
       icon: Headphones,
     },
   ],
-  settings: [
-    {
-      name: "Settings",
-      url: "/settings",
-      icon: Settings,
-    },
-  ],
+
 };
 
 export const profileData = {

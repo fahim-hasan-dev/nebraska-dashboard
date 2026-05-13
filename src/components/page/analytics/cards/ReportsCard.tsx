@@ -67,7 +67,7 @@ const ReportsCard: React.FC = () => {
               <SelectContent>
                 <SelectItem value="sales">Sales Report</SelectItem>
                 <SelectItem value="users">User Growth</SelectItem>
-                <SelectItem value="products">Product Listings</SelectItem>
+
                 <SelectItem value="categories">Category Analysis</SelectItem>
               </SelectContent>
             </Select>

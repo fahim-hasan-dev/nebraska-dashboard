@@ -2,24 +2,16 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Image from "next/image";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import BackButton from "@/components/shared/back-button";
+import { AuthWrapper } from "../AuthWrapper";
 
 export function ForgotPasswordForm({
   className,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"form">) {
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -44,45 +36,46 @@ export function ForgotPasswordForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="py-4 md:px-20 md:py-12 shadow-none border-none bg-white/60 backdrop-blur-xl">
-        <CardHeader className="text-center">
-          <span className="absolute left-4 top-4">
-            <BackButton />
-          </span>
-          <figure className="flex justify-center pb-4 h-24">
-            <Image src={"/logo.svg"} alt="logo" width={180} height={100} />
-          </figure>
-          <CardTitle className="text-2xl">Forgot password ?</CardTitle>
-          <CardDescription className="pt-2 text-primary-foreground">
-            Please enter your email for verification
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-6">
-              <div className="grid gap-6">
-                {/* email */}
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="me@example.com"
-                    required
-                    className="bg-white border-none shadow-none"
-                  />
-                </div>
-                {/* submit button */}
-                <Button type="submit" className="w-full">
-                  Send Code
-                </Button>
-              </div>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthWrapper 
+      title="Reset Password" 
+      subtitle="Enter the email address associated with your account."
+    >
+      <form onSubmit={handleSubmit} className={cn("space-y-6", className)} {...props}>
+        <div className="space-y-5">
+          {/* Email field */}
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-[14px] font-medium text-[#374151]">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Enter your full name"
+              required
+              className="w-full h-12 px-4 border border-[#E5E7EB] rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-4 pt-2">
+            <Button 
+              type="submit" 
+              className="w-full h-12 bg-[#3B82F6] hover:bg-blue-700 text-white font-bold text-[16px] rounded-lg transition-all shadow-sm active:scale-[0.98]"
+            >
+              Send Reset Link
+            </Button>
+            
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={() => router.push('/login')}
+              className="w-full h-12 bg-white border border-[#E5E7EB] hover:bg-gray-50 text-[#374151] font-medium text-[16px] rounded-lg transition-all shadow-sm"
+            >
+              Back to Sign in
+            </Button>
+          </div>
+        </div>
+      </form>
+    </AuthWrapper>
   );
 }
+
