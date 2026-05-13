@@ -10,8 +10,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Re-Wears | Dashboard",
-  description: "Multi-vendor e-commerce platform for second-hand clothing",
+  title: "Nebraska Bush Pullers | Dashboard",
+  description: "Admin Panel for Nebraska Bush Pullers",
 };
 
 export default function RootLayout({

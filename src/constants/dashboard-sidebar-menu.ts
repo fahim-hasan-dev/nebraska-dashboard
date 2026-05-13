@@ -30,11 +30,7 @@ export const sidebarMenu = {
       url: "/results",
       icon: Trophy,
     },
-    {
-      title: "Standings",
-      url: "/standings",
-      icon: Star,
-    },
+
     {
       title: "Messages",
       url: "/messages",

@@ -29,10 +29,8 @@ export function NavMain({
 
   return (
     <SidebarGroup className="gap-4">
-      <SidebarGroupLabel className="flex items-center gap-2 text-zinc-400">
-        <span>Menu</span> <span className="flex-1 bg-gray-200 h-0.5"></span>
-      </SidebarGroupLabel>
-      <SidebarMenu>
+
+      <SidebarMenu className="gap-3 mt-1">
         {items.map((item) => {
           const isActive = item.url === pathname;
 
@@ -41,10 +39,10 @@ export function NavMain({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   tooltip={item.title}
-                  className={`${
+                  className={`rounded-md transition-colors py-[22px] px-4 ${
                     isActive
-                      ? "bg-primary text-white hover:bg-primary hover:text-white active:bg-primary-foreground active:text-white"
-                      : ""
+                      ? "bg-[#f0f7ff] text-[#3b82f6] font-semibold hover:bg-[#e0efff]"
+                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
                   }`}
                 >
                   {item.icon && (
