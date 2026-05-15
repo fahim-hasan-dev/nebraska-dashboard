@@ -21,6 +21,7 @@ export default function EventsView({ events }: { events: any[] }) {
         {events.map((event) => (
           <EventCard
             key={event.id}
+            id={event.id}
             title={event.title}
             date={event.date}
             location={event.location}

@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Trophy,
   UserPlus,
+  CircleHelp,
 } from "lucide-react";
 
 export const sidebarMenu = {
@@ -58,6 +59,11 @@ export const sidebarMenu = {
       title: "Help & Support",
       url: "/help-support",
       icon: Headphones,
+    },
+    {
+      title: "FAQ",
+      url: "/faq",
+      icon: CircleHelp,
     },
   ],
 
