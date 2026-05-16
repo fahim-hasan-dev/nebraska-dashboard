@@ -1,6 +1,6 @@
 "use client";
 
-import { UploadCloud, X } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,

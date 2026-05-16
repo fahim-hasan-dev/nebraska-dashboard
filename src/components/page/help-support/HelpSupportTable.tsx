@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Eye, MapPin, MoreHorizontal, Phone, Mail, Trash2 } from "lucide-react";
 import {
   DropdownMenu,

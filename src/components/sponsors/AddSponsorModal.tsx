@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, X, LayoutTemplate } from "lucide-react";
+import { Upload, LayoutTemplate } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,

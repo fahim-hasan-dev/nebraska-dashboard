@@ -1,7 +1,4 @@
-import DashboardBreadcrumb from "@/components/layout/dashboard/navbar/dashboard-breadcrumb";
-import NavUserWrapper from "@/components/layout/dashboard/navbar/nav-user-wrapper";
 import { AppSidebar } from "@/components/layout/dashboard/sidebar/app-sidebar";
-import SearchBar from "@/components/shared/SearchBar";
 import {
   SidebarInset,
   SidebarProvider,

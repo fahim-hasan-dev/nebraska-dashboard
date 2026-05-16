@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function DriverRequestsTable({ data }: { data: any[] }) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Building2, Mail, Phone } from "lucide-react";
 
 export default function SponsorApplicationsView({ applications }: { applications: any[] }) {

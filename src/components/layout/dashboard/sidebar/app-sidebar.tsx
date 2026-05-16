@@ -7,7 +7,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -17,7 +16,6 @@ import {
 
 import { sidebarMenu } from "@/constants/dashboard-sidebar-menu";
 import { LogOut } from "lucide-react";
-import Link from "next/link";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

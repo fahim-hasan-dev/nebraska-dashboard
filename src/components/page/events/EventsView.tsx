@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EventCard } from "@/components/events/EventCard";
 import { AddEventModal } from "@/components/events/AddEventModal";
 import { Plus } from "lucide-react";

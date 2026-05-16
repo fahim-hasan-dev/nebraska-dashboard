@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChevronDown, Plus } from "lucide-react";
 
 export default function ResultsView({ results }: { results: any[] }) {

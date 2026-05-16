@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Eye, FileText, ArrowLeft } from "lucide-react";
 
 interface HelpSupportDetailProps {
