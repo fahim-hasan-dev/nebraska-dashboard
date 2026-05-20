@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { AuthWrapper } from "../AuthWrapper";
+import { myFetch } from "@/utils/myFetch";
 
 export function ForgotPasswordForm({
   className,
@@ -15,29 +16,37 @@ export function ForgotPasswordForm({
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
     toast.loading("Sending...", {
       id: "forgot-password-toast",
     });
-    e.preventDefault();
+
     const formData = new FormData(e.currentTarget);
-    const payload = {
-      email: formData.get("email"),
-    };
-    console.log(payload);
+    const email = formData.get("email") as string;
 
     try {
-      //! perform your api call here...
+      // Perform the API call to send OTP to the email
+      const response = await myFetch("/auth/forget-password", {
+        method: "POST",
+        body: { email },
+      });
 
-      toast.success("OTP sent to your email", { id: "forgot-password-toast" });
-      router.push(`/otp-verify?email=${payload.email}`);
+      if (response.success) {
+        toast.success(response.message || "OTP sent to your email", { id: "forgot-password-toast" });
+        router.push(`/otp-verify?email=${email}`);
+      } else {
+        toast.error(response.message || response.error || "Failed to send reset link", { id: "forgot-password-toast" });
+      }
     } catch (error: unknown) {
-      console.log("Error fetching data:", error);
+      console.error("Error sending OTP:", error);
+      toast.error("An unexpected error occurred. Please try again.", { id: "forgot-password-toast" });
     }
   };
 
   return (
-    <AuthWrapper 
-      title="Reset Password" 
+    <AuthWrapper
+      title="Reset Password"
       subtitle="Enter the email address associated with your account."
     >
       <form onSubmit={handleSubmit} className={cn("space-y-6", className)} {...props}>
@@ -57,14 +66,14 @@ export function ForgotPasswordForm({
 
           {/* Action Buttons */}
           <div className="space-y-4 pt-2">
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full h-12 bg-[#3B82F6] hover:bg-blue-700 text-white font-bold text-[16px] rounded-lg transition-all shadow-sm active:scale-[0.98]"
             >
-              Send Reset Link
+              Send OTP
             </Button>
-            
-            <Button 
+
+            <Button
               type="button"
               variant="outline"
               onClick={() => router.push('/login')}

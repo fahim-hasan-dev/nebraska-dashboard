@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { AuthWrapper } from "../AuthWrapper";
+import { myFetch } from "@/utils/myFetch";
 
 // zod schema for form validation
 const FormSchema = z
@@ -41,7 +42,7 @@ export function ResetPasswordForm({
   const [isConfPasswordVisible, setIsConfPasswordVisible] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams?.get("auth");
+  const token = searchParams?.get("token");
 
   // define form
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -57,17 +58,32 @@ export function ResetPasswordForm({
     toast.loading("Reseting...", {
       id: "reset-password-toast",
     });
-    console.log(values, token);
 
     try {
-      //! perform your api call here...
+      // Perform the API call using myFetch
+      const response = await myFetch(`/auth/reset-password?token=${token}`, {
+        method: "POST",
+        body: {
+          newPassword: values.newPassword,
+          confirmPassword: values.confirmPassword,
+        },
+      });
 
-      toast.success("Reseted successfully", {
+      if (response.success) {
+        toast.success(response.message || "Reseted successfully", {
+          id: "reset-password-toast",
+        });
+        router.push(`/login`);
+      } else {
+        toast.error(response.message || response.error || "Failed to reset password", {
+          id: "reset-password-toast",
+        });
+      }
+    } catch (error: unknown) {
+      console.error("Error resetting password:", error);
+      toast.error("An unexpected error occurred. Please try again.", {
         id: "reset-password-toast",
       });
-      router.push(`/login`);
-    } catch (error: unknown) {
-      console.log(error);
     }
   };
 

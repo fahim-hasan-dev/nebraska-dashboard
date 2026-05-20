@@ -11,34 +11,57 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { myFetch } from "@/utils/myFetch";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"form">) {
+  const { setToken, setUser } = useAuthContext();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const router = useRouter();
   const redirect = useSearchParams().get("redirect");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
     toast.loading("Logging in...", {
       id: "login",
     });
-    e.preventDefault();
+    
     const formData = new FormData(e.currentTarget);
-    const payload = {
-      email: formData.get("email"),
-      password: formData.get("password"),
-    };
-    console.log(payload);
+    const email = formData.get("email");
+    const password = formData.get("password");
 
     try {
-      //! perform your api call here..
+      // 1. Perform the API call using myFetch
+      const response = await myFetch("/auth/admin-login", {
+        method: "POST",
+        body: { email, password },
+      });
 
-      toast.success("Login successful", { id: "login" });
-      router.push(redirect || "/");
+      if (response.success && response.data) {
+        const token = response.data.token || response.data.accessToken || response.data.data?.token;
+        const user = response.data.user || response.data.data?.user || response.data;
+
+        if (token) {
+          // 2. Set cookies and state via AuthContext
+          setToken(token);
+          if (user) {
+            setUser(JSON.stringify(user));
+          }
+          
+          toast.success("Login successful", { id: "login" });
+          router.push(redirect || "/");
+          return;
+        }
+      }
+
+      toast.error(response.message || response.error || "Login failed. Please check your credentials.", { id: "login" });
     } catch (error: unknown) {
-      console.log("Error fetching data:", error);
+      console.error("Error fetching data:", error);
+      toast.error("An unexpected error occurred. Please try again.", { id: "login" });
     }
   };
 

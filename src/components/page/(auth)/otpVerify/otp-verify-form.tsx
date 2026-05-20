@@ -25,8 +25,8 @@ import {
 import { useEffect, useState } from "react";
 
 const FormSchema = z.object({
-  oneTimeCode: z.string().min(5, {
-    message: "Your one-time password must be 5 digits.",
+  oneTimeCode: z.string().min(6, {
+    message: "Your one-time password must be 6 digits.",
   }),
 });
 
@@ -37,7 +37,7 @@ export function OtpVerifyForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams?.get("email");
-  const [timeLeft, setTimeLeft] = useState(56); // Example starting time from screenshot
+  const [timeLeft, setTimeLeft] = useState(56);
 
   useEffect(() => {
     if (timeLeft <= 0) return;
@@ -65,17 +65,28 @@ export function OtpVerifyForm({
       id: "verify-otp-toast",
     });
 
-    const payload = {
-      oneTimeCode: Number(values.oneTimeCode),
-      email,
-    };
-    console.log(payload);
-
     try {
-      toast.success("OTP verified successfully", { id: "verify-otp-toast" });
-      router.push(`/reset-password?auth=demoAuthToken`);
+      // Perform the API call to verify the OTP code
+      const response = await myFetch("/auth/verify-account", {
+        method: "POST",
+        body: {
+          oneTimeCode: values.oneTimeCode,
+          email,
+        },
+      });
+
+      if (response.success) {
+        // Retrieve the token from response (to authorize reset-password page)
+        const token = response.data?.token || response.data?.accessToken || response.data?.data?.token || "demoAuthToken";
+        
+        toast.success(response.message || "OTP verified successfully", { id: "verify-otp-toast" });
+        router.push(`/reset-password?token=${token}`);
+      } else {
+        toast.error(response.message || response.error || "Failed to verify OTP", { id: "verify-otp-toast" });
+      }
     } catch (error: unknown) {
-      console.log(error);
+      console.error("Error verifying OTP:", error);
+      toast.error("An unexpected error occurred. Please try again.", { id: "verify-otp-toast" });
     }
   };
 
@@ -118,7 +129,7 @@ export function OtpVerifyForm({
                 <FormItem className="flex flex-col items-center">
                   <FormControl>
                     <InputOTP
-                      maxLength={5}
+                      maxLength={6}
                       pattern={REGEXP_ONLY_DIGITS}
                       {...field}
                     >
@@ -128,6 +139,7 @@ export function OtpVerifyForm({
                         <InputOTPSlot index={2} className="w-16 h-16 text-2xl font-bold border-[#E5E7EB] rounded-lg" />
                         <InputOTPSlot index={3} className="w-16 h-16 text-2xl font-bold border-[#E5E7EB] rounded-lg" />
                         <InputOTPSlot index={4} className="w-16 h-16 text-2xl font-bold border-[#E5E7EB] rounded-lg" />
+                        <InputOTPSlot index={5} className="w-16 h-16 text-2xl font-bold border-[#E5E7EB] rounded-lg" />
                       </InputOTPGroup>
                     </InputOTP>
                   </FormControl>
