@@ -56,6 +56,12 @@ export function EventCard({
           ))}
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            href={`/events/${id}`}
+            className="flex items-center justify-center px-4 py-1.5 border border-gray-300 text-gray-700 rounded-md font-medium text-xs hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+          >
+            Manage Event
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="text-gray-400 hover:text-gray-600 outline-none p-1 rounded-md hover:bg-gray-50">
@@ -65,7 +71,7 @@ export function EventCard({
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem asChild>
                 <Link href={`/events/${id}`} className="w-full cursor-pointer">
-                  Class
+                  Manage Class
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="text-gray-600 cursor-pointer py-2">
