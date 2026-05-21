@@ -8,6 +8,7 @@ import { AddClassModal } from "@/components/events/AddClassModal";
 import { myFetch } from "@/utils/myFetch";
 import { config } from "@/config/env-config";
 import toast from "react-hot-toast";
+import { getImageUrl } from "@/utils/imageUrl";
 import {
   Dialog,
   DialogContent,
@@ -366,7 +367,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                     className="relative aspect-video rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-all group"
                   >
                     <img
-                      src={`${config.serverURL}${pic}`}
+                      src={getImageUrl(pic)}
                       alt={`Event tractor ${index + 1}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />

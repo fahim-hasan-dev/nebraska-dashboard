@@ -48,7 +48,10 @@ const DeleteModal = ({
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={() => action(itemId)}
+            onClick={async () => {
+              await action(itemId);
+              setOpen(false);
+            }}
             className="bg-red-500 hover:bg-red-700"
           >
             {actionBtnText || "Continue"}

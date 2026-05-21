@@ -1,5 +1,6 @@
 import Image from "next/image";
 import EditProfileModal from "./EditProfileModal";
+import { getImageUrl } from "@/utils/imageUrl";
 
 const ProfileDetailsTab = ({ user }) => {
   return (
@@ -12,7 +13,7 @@ const ProfileDetailsTab = ({ user }) => {
       <section className="flex flex-col md:flex-row gap-16">
         <div className="flex flex-col items-center gap-2">
           <Image
-            src={`${user.image}`}
+            src={getImageUrl(user?.image)}
             alt="profile"
             width={250}
             height={250}

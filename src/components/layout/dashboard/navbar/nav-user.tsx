@@ -3,6 +3,7 @@
 import { BadgeCheck, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getImageUrl } from "@/utils/imageUrl";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,7 +44,7 @@ export function NavUser({
             >
               <Avatar className="size-10 rounded-lg">
                 <AvatarImage
-                  src={`${user?.image}`}
+                  src={getImageUrl(user?.image)}
                   alt={user?.firstname}
                   className="rounded-full relative"
                 />
@@ -69,7 +70,7 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={`${user?.image}`} alt={user?.firstname} />
+                  <AvatarImage src={getImageUrl(user?.image)} alt={user?.firstname} />
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">

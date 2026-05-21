@@ -1,42 +1,114 @@
 "use client";
 
-import { AlertCircle, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { myFetch } from "@/utils/myFetch";
+import toast from "react-hot-toast";
+import dynamic from "next/dynamic";
 
-const defaultTerms = `### 1. Introduction
-Welcome to Modulix Market. By accessing our platform, you agree to these terms. Please read them carefully.
+const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
-### 2. Service Usage
-Our platform connects suppliers with businesses for bulk purchasing. You agree to use the service only for lawful purposes and in accordance with these Terms.
-* You must provide accurate account information.
-* You are responsible for maintaining the confidentiality of your account.
-* Unauthorized use of the platform is strictly prohibited.
+const defaultTerms = `<h3>1. Introduction</h3>
+<p>Welcome to Nebraska. By accessing our platform, you agree to these terms. Please read them carefully.</p>
+<h3>2. Service Usage</h3>
+<p>You agree to use the service only for lawful purposes and in accordance with these Terms.</p>
+<ul>
+  <li>You must provide accurate account information.</li>
+  <li>You are responsible for maintaining the confidentiality of your account.</li>
+  <li>Unauthorized use of the platform is strictly prohibited.</li>
+</ul>
+<h3>3. Orders & Payments</h3>
+<p>All transactions are subject to acceptance and availability. Prices are subject to change without notice.</p>
+<h3>4. Intellectual Property</h3>
+<p>The content, organization, graphics, design, compilation, and other matters related to the Site are protected under applicable copyrights and other proprietary laws.</p>`;
 
-### 3. Orders & Payments
-All orders are subject to acceptance and availability. Prices are subject to change without notice. We reserve the right to refuse service to anyone.
-
-### 4. Intellectual Property
-The content, organization, graphics, design, compilation, and other matters related to the Site are protected under applicable copyrights and other proprietary laws.`;
-
-const defaultPrivacy = `### 1. Information Collection
-We collect information to provide better services to all our users. We may collect personal information such as your name, email address, and payment details.
-
-### 2. How We Use Information
-We use the information we collect to provide, maintain, protect and improve our services, to develop new ones, and to protect our platform and our users.
-
-### 3. Information Sharing
-We do not share personal information with companies, organizations and individuals outside of our company unless one of the following circumstances applies...`;
+const defaultPrivacy = `<h3>1. Information Collection</h3>
+<p>We collect information to provide better services to all our users. We may collect personal information such as your name, email address, and phone number.</p>
+<h3>2. How We Use Information</h3>
+<p>We use the information we collect to provide, maintain, protect and improve our services, to develop new ones, and to protect our platform and our users.</p>
+<h3>3. Information Sharing</h3>
+<p>We do not share personal information with companies, organizations and individuals outside of our company unless one of the following circumstances applies...</p>`;
 
 export default function LegalView() {
   const [activeTab, setActiveTab] = useState<"terms" | "privacy">("terms");
-  const [termsContent, setTermsContent] = useState(defaultTerms);
-  const [privacyContent, setPrivacyContent] = useState(defaultPrivacy);
+  const [termsContent, setTermsContent] = useState("");
+  const [privacyContent, setPrivacyContent] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleReset = () => {
-    if (activeTab === "terms") {
-      setTermsContent(defaultTerms);
-    } else {
-      setPrivacyContent(defaultPrivacy);
+  // Memoized Jodit configuration to prevent cursor jumping/re-renders and set native height
+  const config = useMemo(() => ({
+    readonly: false,
+    placeholder: "Start typing...",
+    height: 400,
+    width: "auto",
+  }), []);
+
+  // Fetch legal content from backend on mount
+  useEffect(() => {
+    const fetchLegalData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch Terms and Conditions
+        const termsRes = await myFetch("/public/terms-and-condition", {
+          method: "GET",
+          cache: "no-store",
+        });
+        if (termsRes.success && termsRes.data) {
+          setTermsContent(termsRes.data.content || defaultTerms);
+        } else {
+          setTermsContent(defaultTerms);
+        }
+
+        // Fetch Privacy Policy
+        const privacyRes = await myFetch("/public/privacy-policy", {
+          method: "GET",
+          cache: "no-store",
+        });
+        if (privacyRes.success && privacyRes.data) {
+          setPrivacyContent(privacyRes.data.content || defaultPrivacy);
+        } else {
+          setPrivacyContent(defaultPrivacy);
+        }
+      } catch (err) {
+        console.error("Error fetching legal data:", err);
+        toast.error("Failed to load legal content from server");
+        setTermsContent(defaultTerms);
+        setPrivacyContent(defaultPrivacy);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLegalData();
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    const type = activeTab === "terms" ? "terms-and-condition" : "privacy-policy";
+    const content = activeTab === "terms" ? termsContent : privacyContent;
+
+    toast.loading("Saving content...", { id: "save-legal" });
+
+    try {
+      const res = await myFetch("/public", {
+        method: "POST",
+        body: { type, content },
+      });
+
+      if (res.success) {
+        toast.success(
+          `${activeTab === "terms" ? "Terms & Conditions" : "Privacy Policy"} saved successfully!`,
+          { id: "save-legal" }
+        );
+      } else {
+        toast.error(res.message || "Failed to save content", { id: "save-legal" });
+      }
+    } catch (err) {
+      console.error("Error saving legal content:", err);
+      toast.error("An unexpected error occurred while saving", { id: "save-legal" });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -53,7 +125,7 @@ export default function LegalView() {
       </div>
 
       {/* Main Container */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col shadow-sm">
         
         {/* Tabs */}
         <div className="flex border-b border-gray-200">
@@ -61,7 +133,7 @@ export default function LegalView() {
             onClick={() => setActiveTab("terms")}
             className={`flex-1 py-4 text-sm font-semibold transition-colors ${
               activeTab === "terms"
-                ? "text-blue-600 border-b-2 border-blue-600"
+                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/5"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
             }`}
           >
@@ -76,7 +148,7 @@ export default function LegalView() {
             onClick={() => setActiveTab("privacy")}
             className={`flex-1 py-4 text-sm font-semibold transition-colors ${
               activeTab === "privacy"
-                ? "text-blue-600 border-b-2 border-blue-600"
+                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/5"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
             }`}
           >
@@ -94,32 +166,40 @@ export default function LegalView() {
           <div className="bg-[#fffdf5] border border-amber-200/60 rounded-md p-3 flex gap-2 items-start">
             <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
             <p className="text-[13px] text-amber-700">
-              <span className="font-semibold text-amber-800">Tip:</span> You can use Markdown-like syntax for headers (### Header) and bullet points (* Item). Currently editing in <span className="font-bold">Plain Text</span> mode.
+              <span className="font-semibold text-amber-800">Tip:</span> Edit content using the Rich Text WYSIWYG editor below. Content is automatically saved as HTML.
             </p>
           </div>
 
-          {/* Textarea */}
-          <textarea
-            value={activeTab === "terms" ? termsContent : privacyContent}
-            onChange={(e) =>
-              activeTab === "terms"
-                ? setTermsContent(e.target.value)
-                : setPrivacyContent(e.target.value)
-            }
-            className="w-full min-h-[400px] bg-gray-50/50 border border-gray-100 rounded-lg p-6 text-sm text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y"
-            spellCheck="false"
-          />
+          {/* Editor Container */}
+          <div className="min-h-[400px] border border-gray-100 rounded-lg overflow-hidden bg-gray-50/10">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-500 text-sm font-medium bg-white">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+                Loading content...
+              </div>
+            ) : activeTab === "terms" ? (
+              <JoditEditor
+                value={termsContent}
+                config={config}
+                onBlur={(newContent) => setTermsContent(newContent)}
+              />
+            ) : (
+              <JoditEditor
+                value={privacyContent}
+                config={config}
+                onBlur={(newContent) => setPrivacyContent(newContent)}
+              />
+            )}
+          </div>
 
           {/* Footer Actions */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-2">
+          <div className="flex justify-end items-center gap-4 mt-2">
             <button
-              onClick={handleReset}
-              className="flex items-center justify-center gap-2 text-gray-500 hover:text-gray-700 font-medium text-sm transition-colors w-full sm:w-auto"
+              onClick={handleSave}
+              disabled={isLoading || isSaving}
+              className="bg-[#3b82f6] hover:bg-blue-600 disabled:bg-blue-400 text-white px-8 py-2 rounded-md font-semibold text-sm transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
             >
-              <RefreshCw className="w-4 h-4" />
-              Reset to Default
-            </button>
-            <button className="bg-[#3b82f6] hover:bg-blue-600 text-white px-8 py-2 rounded-md font-medium text-sm transition-colors w-full sm:w-auto">
+              {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
               Save
             </button>
           </div>

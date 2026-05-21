@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { ImageIcon } from "lucide-react";
+import { getImageUrl } from "@/utils/imageUrl";
 
 const ImageUpload = ({ setFile, user }) => {
   const [image, setImage] = useState<string | null>(null);
@@ -33,7 +34,7 @@ const ImageUpload = ({ setFile, user }) => {
         >
           {/* Display Image or Placeholder */}
           <Image
-            src={image || `${user.image}`} // Display uploaded image or default
+            src={getImageUrl(image || user?.image)} // Display uploaded image or default
             alt="Profile"
             width={350}
             height={300}
