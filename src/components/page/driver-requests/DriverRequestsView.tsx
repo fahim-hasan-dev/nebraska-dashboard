@@ -8,6 +8,7 @@ import { AddDriverModal } from "@/components/driver-requests/AddDriverModal";
 import { RunDrawModal } from "@/components/driver-requests/RunDrawModal";
 import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
+import { CustomPagination } from "@/components/ui/custom-pagination";
 
 export default function DriverRequestsView() {
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -292,29 +293,7 @@ export default function DriverRequestsView() {
           />
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-between items-center mt-6 bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-              <span className="text-sm text-gray-500 font-medium">
-                Page {page} of {totalPages} ({totalItems} total requests)
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                  disabled={page === 1}
-                  className="px-4 py-2 border border-gray-200 text-gray-700 rounded-md font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={page === totalPages}
-                  className="px-4 py-2 bg-[#3b82f6] text-white rounded-md font-semibold text-sm hover:bg-blue-600 disabled:opacity-50 transition-colors"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+          <CustomPagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
 

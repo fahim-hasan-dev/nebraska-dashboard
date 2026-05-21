@@ -1,10 +1,25 @@
 import SponsorsView from "@/components/page/sponsors/SponsorsView";
-import { demoSponsorsData } from "@/demoData/sponsors";
+import { myFetch } from "@/utils/myFetch";
 
 const SponsorsPage = async () => {
+  let initialSponsors = [];
+
+  try {
+    const response = await myFetch("/sponsor?limit=100", {
+      method: "GET",
+      cache: "no-store", // Ensure server-side fetch is dynamic
+    });
+
+    if (response.success && Array.isArray(response.data)) {
+      initialSponsors = response.data;
+    }
+  } catch (error) {
+    console.error("Error fetching initial sponsors on server-side:", error);
+  }
+
   return (
     <>
-      <SponsorsView initialSponsors={demoSponsorsData} />
+      <SponsorsView initialSponsors={initialSponsors} />
     </>
   );
 };

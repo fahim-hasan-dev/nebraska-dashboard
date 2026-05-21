@@ -2,66 +2,46 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { HelpSupportTable } from "@/components/page/help-support/HelpSupportTable";
 import { HelpSupportDetail } from "@/components/page/help-support/HelpSupportDetail";
 import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
+import { CustomPagination } from "@/components/ui/custom-pagination";
 
 export default function HelpSupportView({ tickets }: { tickets: any[] }) {
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [ticketsList, setTicketsList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [hasLoadedFromApi, setHasLoadedFromApi] = useState(false);
 
   // Pagination states
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  const getPaginationRange = () => {
-    const range: (number | string)[] = [];
-    const maxVisible = 10;
-    
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        range.push(i);
-      }
-    } else {
-      if (page <= 6) {
-        for (let i = 1; i <= 8; i++) {
-          range.push(i);
-        }
-        range.push("...");
-        range.push(totalPages);
-      } else if (page >= totalPages - 5) {
-        range.push(1);
-        range.push("...");
-        for (let i = totalPages - 7; i <= totalPages; i++) {
-          range.push(i);
-        }
-      } else {
-        range.push(1);
-        range.push("...");
-        for (let i = page - 3; i <= page + 3; i++) {
-          range.push(i);
-        }
-        range.push("...");
-        range.push(totalPages);
-      }
-    }
-    return range;
-  };
+  // Debounce search query changes to prevent heavy server load
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
 
-  // Fetch help support tickets
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
+  // Fetch help support tickets using 'searchTerm'
   const fetchTickets = async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
       params.append("page", String(page));
       params.append("limit", "15");
-      if (searchQuery) {
-        params.append("searchTerm", searchQuery);
+      if (debouncedSearchQuery) {
+        params.append("searchTerm", debouncedSearchQuery);
       }
 
       const res = await myFetch(`/help-support?${params.toString()}`, {
@@ -75,6 +55,7 @@ export default function HelpSupportView({ tickets }: { tickets: any[] }) {
           ? res.data 
           : (res.data?.data && Array.isArray(res.data.data) ? res.data.data : []);
         setTicketsList(list);
+        setHasLoadedFromApi(true);
 
         if (res.pagination) {
           setTotalPages(res.pagination.totalPage || 1);
@@ -97,7 +78,7 @@ export default function HelpSupportView({ tickets }: { tickets: any[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  // Reset page to 1 when search changes. If it is already 1, trigger manual fetch to update results immediately.
+  
   useEffect(() => {
     if (page === 1) {
       fetchTickets();
@@ -105,16 +86,16 @@ export default function HelpSupportView({ tickets }: { tickets: any[] }) {
       setPage(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery]);
+  }, [debouncedSearchQuery]);
 
   // Local/Remote filtering
-  const hasDbData = ticketsList.length > 0;
+  const hasDbData = hasLoadedFromApi;
   const sourceList = hasDbData ? ticketsList : tickets;
   
   const filteredTickets = hasDbData 
     ? ticketsList 
     : sourceList.filter((ticket) => {
-        const search = searchQuery.toLowerCase();
+        const search = debouncedSearchQuery.toLowerCase();
         return (
           ticket.title?.toLowerCase().includes(search) ||
           (ticket.description || ticket.message)?.toLowerCase().includes(search) ||
@@ -214,62 +195,7 @@ export default function HelpSupportView({ tickets }: { tickets: any[] }) {
               />
 
               {/* Dynamic Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center mt-8 gap-4 py-4 border-t border-gray-100/50 animate-fadeIn">
-                  {/* Previous Button */}
-                  <button
-                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                    disabled={page === 1}
-                    className="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-900 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors py-2 px-3 rounded-md"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    Previous
-                  </button>
-
-                  {/* Page Numbers */}
-                  <div className="flex items-center gap-2">
-                    {getPaginationRange().map((p, i) => {
-                      if (p === "...") {
-                        return (
-                          <span
-                            key={`ellipsis-${i}`}
-                            className="w-9 h-9 flex items-center justify-center text-sm font-bold text-[#A7A7A7]"
-                          >
-                            ...
-                          </span>
-                        );
-                      }
-
-                      const pageNum = p as number;
-                      const isActive = pageNum === page;
-
-                      return (
-                        <button
-                          key={`page-${pageNum}`}
-                          onClick={() => setPage(pageNum)}
-                          className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-semibold transition-all duration-200 ${
-                            isActive
-                              ? "bg-[#fcd34d] hover:bg-[#fbbf24] text-white font-bold transform scale-105"
-                              : "text-[#A7A7A7] hover:text-gray-900 hover:bg-gray-50"
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                    disabled={page === totalPages}
-                    className="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-900 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors py-2 px-3 rounded-md"
-                  >
-                    Next
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+              <CustomPagination page={page} totalPages={totalPages} onPageChange={setPage} />
             </>
           )}
         </div>
