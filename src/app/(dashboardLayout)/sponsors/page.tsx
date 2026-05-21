@@ -1,8 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import SponsorsView from "@/components/page/sponsors/SponsorsView";
 import { myFetch } from "@/utils/myFetch";
 
 const SponsorsPage = async () => {
-  let initialSponsors = [];
+  let initialSponsors: any[] = [];
 
   try {
     const response = await myFetch("/sponsor?limit=100", {

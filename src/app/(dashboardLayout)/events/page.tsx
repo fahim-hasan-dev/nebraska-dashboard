@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import EventsView from "@/components/page/events/EventsView";
 import { myFetch } from "@/utils/myFetch";
 

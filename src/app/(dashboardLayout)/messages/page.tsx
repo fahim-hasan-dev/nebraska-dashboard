@@ -1,8 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import MessagesView from "@/components/page/messages/MessagesView";
 import { myFetch } from "@/utils/myFetch";
 
 const MessagesPage = async () => {
-  let initialMessages = [];
+  let initialMessages: any[] = [];
 
   try {
     const response = await myFetch("/message?limit=100", {
