@@ -7,7 +7,7 @@ import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
 import { CustomPagination } from "@/components/ui/custom-pagination";
 
-export default function SponsorApplicationsView({ applications }: { applications: any[] }) {
+export default function SponsorApplicationsView() {
   const [applicationsList, setApplicationsList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -85,27 +85,21 @@ export default function SponsorApplicationsView({ applications }: { applications
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery]);
 
-  // Local/Remote filtering fallback
-  const hasDbData = hasLoadedFromApi;
-  const sourceList = hasDbData ? applicationsList : applications;
-
-  const filteredApplications = hasDbData
-    ? applicationsList
-    : sourceList.filter((app) => {
-        const search = debouncedSearchQuery.toLowerCase();
-        const businessName = app.businessName || app.company || "";
-        const contactPerson = app.user?.fullName || app.contactPerson || app.name || "";
-        const email = app.user?.email || app.email || "";
-        const phone = app.user?.phone || app.phone || "";
-        const message = app.message || "";
-        return (
-          businessName.toLowerCase().includes(search) ||
-          contactPerson.toLowerCase().includes(search) ||
-          email.toLowerCase().includes(search) ||
-          phone.toLowerCase().includes(search) ||
-          message.toLowerCase().includes(search)
-        );
-      });
+  const filteredApplications = applicationsList.filter((app) => {
+    const search = debouncedSearchQuery.toLowerCase();
+    const businessName = app.businessName || app.company || "";
+    const contactPerson = app.user?.fullName || app.contactPerson || app.name || "";
+    const email = app.user?.email || app.email || "";
+    const phone = app.user?.phone || app.phone || "";
+    const message = app.message || "";
+    return (
+      businessName.toLowerCase().includes(search) ||
+      contactPerson.toLowerCase().includes(search) ||
+      email.toLowerCase().includes(search) ||
+      phone.toLowerCase().includes(search) ||
+      message.toLowerCase().includes(search)
+    );
+  });
 
   const getFormattedDate = (app: any) => {
     if (app.createdAt) {

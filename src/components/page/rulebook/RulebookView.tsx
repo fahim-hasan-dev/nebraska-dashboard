@@ -98,7 +98,7 @@ export default function RulebookView() {
   };
 
   return (
-    <div className="flex flex-col w-full h-full max-w-[1200px] mx-auto pb-20 p-4 sm:p-6 md:p-8">
+    <div className="flex flex-col w-full min-h-full max-w-[1200px] mx-auto p-4 sm:p-6 md:p-8 pb-32 md:pb-40">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-xl font-bold text-gray-900 mb-1">

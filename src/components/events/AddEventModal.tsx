@@ -1,7 +1,8 @@
 "use client";
 
-import { UploadCloud, Plus, X } from "lucide-react";
-import { useState, useRef } from "react";
+import { UploadCloud, Plus, X, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { getAddressSuggestions, getPlaceCoordinates } from "@/app/actions/mapActions";
 import {
   Dialog,
   DialogContent,
@@ -27,11 +28,61 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [venue, setVenue] = useState("");
+  const [entryFee, setEntryFee] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [classes, setClasses] = useState<string[]>([""]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Map and Address Autocomplete states
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [isSearchingSuggestions, setIsSearchingSuggestions] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleVenueChange = async (val: string) => {
+    setVenue(val);
+    setCoordinates(null); // Reset coordinates when user types
+    if (val.trim().length >= 3) {
+      setIsSearchingSuggestions(true);
+      const results = await getAddressSuggestions(val);
+      setSuggestions(results);
+      setShowSuggestions(true);
+      setIsSearchingSuggestions(false);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSelectSuggestion = async (suggestion: any) => {
+    if (suggestion.placeId === "error") {
+      setShowSuggestions(false);
+      return;
+    }
+    setVenue(suggestion.description);
+    setShowSuggestions(false);
+    toast.loading("Locating coordinates...", { id: "locate-coords" });
+    const coords = await getPlaceCoordinates(suggestion.placeId);
+    if (coords) {
+      setCoordinates(coords);
+      toast.success("Location locked!", { id: "locate-coords" });
+    } else {
+      toast.error("Failed to retrieve coordinates for this address", { id: "locate-coords" });
+    }
+  };
 
   // Dynamic class field handlers
   const handleClassChange = (index: number, value: string) => {
@@ -71,8 +122,25 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
   // Submit the form
   const handleSubmit = async () => {
     // Validation
-    if (!name || !date || !time || !venue) {
+    if (!name || !date || !time || !venue || !entryFee) {
       toast.error("Please fill in all required fields marked with *");
+      return;
+    }
+
+    // Validate past date and time
+    const selectedDateTime = new Date(`${date}T${time}`);
+    if (selectedDateTime < new Date()) {
+      toast.error("Event date and time cannot be in the past");
+      return;
+    }
+
+    if (!coordinates) {
+      toast.error("Please select a valid venue location from the address suggestions");
+      return;
+    }
+
+    if (isNaN(Number(entryFee)) || Number(entryFee) <= 0) {
+      toast.error("Please enter a valid positive entry fee");
       return;
     }
 
@@ -94,6 +162,11 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
         date,
         time,
         venue,
+        location: {
+          type: "Point",
+          coordinates: [coordinates.lng, coordinates.lat], // [longitude, latitude]
+        },
+        entryFee: Number(entryFee),
         additionalInfo,
         class: activeClasses.map((className) => ({
           name: className,
@@ -122,6 +195,8 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
         setDate("");
         setTime("");
         setVenue("");
+        setCoordinates(null);
+        setEntryFee("");
         setAdditionalInfo("");
         setClasses([""]);
         setSelectedFiles([]);
@@ -174,6 +249,7 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
               <input
                 type="date"
                 value={date}
+                min={new Date().toISOString().split("T")[0]}
                 onChange={(e) => setDate(e.target.value)}
                 className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
@@ -193,19 +269,65 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
             </div>
           </div>
 
-          {/* Venue */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">
-              Venue *
-            </label>
-            <input
-              type="text"
-              value={venue}
-              onChange={(e) => setVenue(e.target.value)}
-              placeholder="e.g., County Fairgrounds"
-              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              required
-            />
+          {/* Venue & Entry Fee */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2 relative" ref={suggestionsRef}>
+              <label className="text-sm font-medium text-gray-700">
+                Venue *
+              </label>
+              <input
+                type="text"
+                value={venue}
+                onChange={(e) => handleVenueChange(e.target.value)}
+                onFocus={() => {
+                  if (suggestions.length > 0) setShowSuggestions(true);
+                }}
+                placeholder="Search address..."
+                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                required
+              />
+              
+              {/* Location locked feedback */}
+              {coordinates && (
+                <span className="text-[10px] text-green-600 font-bold absolute right-2.5 top-8.5 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
+                  ✓ Geocoded
+                </span>
+              )}
+
+              {/* Suggestions popover */}
+              {showSuggestions && (
+                <div className="absolute left-0 right-0 top-[68px] z-50 bg-white border border-gray-250 rounded-xl shadow-xl max-h-52 overflow-y-auto divide-y divide-gray-100 animate-in fade-in slide-in-from-top-1 duration-150">
+                  {isSearchingSuggestions ? (
+                    <div className="px-4 py-3 text-xs text-gray-400 font-medium flex items-center gap-1.5">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                      Searching addresses...
+                    </div>
+                  ) : suggestions.map((s, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(s)}
+                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 text-xs font-semibold text-gray-700 truncate block transition-colors"
+                    >
+                      {s.description}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Entry Fee ($) *
+              </label>
+              <input
+                type="number"
+                value={entryFee}
+                onChange={(e) => setEntryFee(e.target.value)}
+                placeholder="e.g., 50"
+                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                required
+              />
+            </div>
           </div>
 
           {/* Dynamic Classes Input */}

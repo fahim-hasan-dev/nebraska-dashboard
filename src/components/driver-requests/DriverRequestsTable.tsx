@@ -5,6 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import DeleteModal from "@/components/modals/DeleteModal";
 
 
 interface DriverRequestsTableProps {
@@ -22,6 +23,7 @@ export function DriverRequestsTable({ data, onAccept, onDelete }: DriverRequests
             <tr>
               <th className="px-6 py-6 font-semibold">ORDER (DRAW)</th>
               <th className="px-6 py-6 font-semibold">USER</th>
+              <th className="px-6 py-6 font-semibold">EVENT</th>
               <th className="px-6 py-6 font-semibold">CLASS</th>
               <th className="px-6 py-6 font-semibold">EMAIL & PHONE</th>
               <th className="px-6 py-6 font-semibold">VEHICLE</th>
@@ -32,7 +34,7 @@ export function DriverRequestsTable({ data, onAccept, onDelete }: DriverRequests
           <tbody className="divide-y divide-gray-50">
             {data?.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-gray-400 font-medium">
+                <td colSpan={8} className="px-6 py-12 text-center text-gray-400 font-medium">
                   No driver registrations found.
                 </td>
               </tr>
@@ -54,13 +56,11 @@ export function DriverRequestsTable({ data, onAccept, onDelete }: DriverRequests
                         {row.drawPosition || "-"}
                       </div>
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="flex flex-col gap-1.5">
-                        <span className="font-bold text-gray-900">{driverName}</span>
-                        <span className="inline-block px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[11px] font-medium w-fit">
-                          {eventName}
-                        </span>
-                      </div>
+                    <td className="px-6 py-5 font-bold text-gray-900">
+                      {driverName}
+                    </td>
+                    <td className="px-6 py-5 font-bold text-gray-900">
+                      {eventName}
                     </td>
                     <td className="px-6 py-5 font-bold text-gray-900">
                       {row.class}
@@ -107,12 +107,21 @@ export function DriverRequestsTable({ data, onAccept, onDelete }: DriverRequests
                               Accept Request
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem
-                            onClick={() => onDelete && onDelete(regId)}
-                            className="text-red-500 focus:text-red-600 cursor-pointer py-2 focus:bg-red-50"
-                          >
-                            Remove Request
-                          </DropdownMenuItem>
+                          <DeleteModal
+                            itemId={regId}
+                            triggerBtn={
+                              <DropdownMenuItem
+                                onSelect={(e) => e.preventDefault()}
+                                className="text-red-500 focus:text-red-600 cursor-pointer py-2 focus:bg-red-50 w-full"
+                              >
+                                Remove Request
+                              </DropdownMenuItem>
+                            }
+                            title="Remove Driver Request"
+                            description="Are you absolutely sure you want to remove this registration request? This action cannot be undone."
+                            actionBtnText="Remove"
+                            action={async (id) => onDelete && onDelete(id)}
+                          />
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

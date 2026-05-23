@@ -9,7 +9,7 @@ import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
 import { CustomPagination } from "@/components/ui/custom-pagination";
 
-export default function HelpSupportView({ tickets }: { tickets: any[] }) {
+export default function HelpSupportView() {
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [ticketsList, setTicketsList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,20 +89,15 @@ export default function HelpSupportView({ tickets }: { tickets: any[] }) {
   }, [debouncedSearchQuery]);
 
   // Local/Remote filtering
-  const hasDbData = hasLoadedFromApi;
-  const sourceList = hasDbData ? ticketsList : tickets;
-  
-  const filteredTickets = hasDbData 
-    ? ticketsList 
-    : sourceList.filter((ticket) => {
-        const search = debouncedSearchQuery.toLowerCase();
-        return (
-          ticket.title?.toLowerCase().includes(search) ||
-          (ticket.description || ticket.message)?.toLowerCase().includes(search) ||
-          (ticket.user?.fullName || ticket.user?.name)?.toLowerCase().includes(search) ||
-          (ticket.user?.email || ticket.contact?.email)?.toLowerCase().includes(search)
-        );
-      });
+  const filteredTickets = ticketsList.filter((ticket) => {
+    const search = debouncedSearchQuery.toLowerCase();
+    return (
+      ticket.title?.toLowerCase().includes(search) ||
+      (ticket.description || ticket.message)?.toLowerCase().includes(search) ||
+      (ticket.user?.fullName || ticket.user?.name)?.toLowerCase().includes(search) ||
+      (ticket.user?.email || ticket.contact?.email)?.toLowerCase().includes(search)
+    );
+  });
 
   // Handle resolving support ticket (PATCH /help-support/:id/status)
   const handleResolveTicket = async (ticketId: string, reply: string): Promise<boolean> => {

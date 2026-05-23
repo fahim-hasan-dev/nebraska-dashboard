@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, Plus, Trash2, Loader2, Trophy, AlertCircle, Car } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Loader2, Trophy, AlertCircle, Car, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,17 @@ export default function ResultsView({}: ResultsViewProps) {
   const [modalDriverId, setModalDriverId] = useState<string>("");
   const [modalDistance, setModalDistance] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Edit Modal form states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingResultId, setEditingResultId] = useState<string>("");
+  const [editEventId, setEditEventId] = useState<string>("");
+  const [editSelectedEvent, setEditSelectedEvent] = useState<any>(null);
+  const [editClassName, setEditClassName] = useState<string>("");
+  const [editDriverId, setEditDriverId] = useState<string>("");
+  const [editDriverName, setEditDriverName] = useState<string>("");
+  const [editDistance, setEditDistance] = useState<string>("");
+  const [isEditingSubmitting, setIsEditingSubmitting] = useState(false);
 
   // Fetch results when Event and Class filters are chosen
   const fetchResults = async (eventId: string, className: string) => {
@@ -129,6 +140,70 @@ export default function ResultsView({}: ResultsViewProps) {
       toast.error("An error occurred while recording result", { id: "result-action" });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const openEditModal = (result: any) => {
+    setEditingResultId(result._id || result.id);
+    setEditEventId(result.event?._id || result.event?.id || result.event || "");
+    setEditSelectedEvent(result.event);
+    setEditClassName(result.class || "");
+    setEditDriverId(result.driver?._id || result.driver?.id || result.driver || "");
+    setEditDriverName(
+      result.driver?.fullName 
+        ? `${result.driver.fullName}${result.driver.vehicleName ? ` (${result.driver.vehicleName})` : ""}` 
+        : "Unknown Driver"
+    );
+    setEditDistance(String(result.distance || ""));
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateResult = async () => {
+    if (!editEventId) {
+      toast.error("Please select an event");
+      return;
+    }
+    if (!editClassName) {
+      toast.error("Please select a class");
+      return;
+    }
+    if (!editDriverId) {
+      toast.error("Please select a driver");
+      return;
+    }
+    if (!editDistance || isNaN(Number(editDistance)) || Number(editDistance) <= 0) {
+      toast.error("Please enter a valid positive distance");
+      return;
+    }
+
+    setIsEditingSubmitting(true);
+    toast.loading("Updating result...", { id: "result-action" });
+
+    try {
+      const res = await myFetch(`/result/${editingResultId}`, {
+        method: "PATCH",
+        body: {
+          event: editEventId,
+          class: editClassName,
+          driver: editDriverId,
+          distance: Number(editDistance),
+        },
+      });
+
+      if (res.success) {
+        toast.success("Result updated successfully!", { id: "result-action" });
+        setIsEditModalOpen(false);
+        if (selectedEventId && selectedClassName) {
+          fetchResults(selectedEventId, selectedClassName);
+        }
+      } else {
+        toast.error(res.message || "Failed to update result", { id: "result-action" });
+      }
+    } catch (error) {
+      console.error("Error updating result:", error);
+      toast.error("An error occurred while updating result", { id: "result-action" });
+    } finally {
+      setIsEditingSubmitting(false);
     }
   };
 
@@ -236,7 +311,7 @@ export default function ResultsView({}: ResultsViewProps) {
                 <div className="space-y-1.5">
                   <Label htmlFor="modalDriver" className="text-gray-600 font-medium">Driver</Label>
                   <SearchableInfiniteSelect
-                    endpoint={modalEventId && modalClassName ? "/eventRegistration" : "/user"}
+                    endpoint={modalEventId && modalClassName ? "/event-registration" : "/user"}
                     fields="_id,email,fullName,vehicleName"
                     extraParams={
                       modalEventId && modalClassName
@@ -440,7 +515,15 @@ export default function ResultsView({}: ResultsViewProps) {
                         <td className="px-6 py-4 font-extrabold text-blue-600 text-base">
                           {row.distance.toFixed(2)} ft
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEditModal(row)}
+                            title="Edit Result"
+                            className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg border border-transparent hover:border-blue-100 transition-all active:scale-95"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+
                           <DeleteModal
                             itemId={row._id || row.id}
                             triggerBtn={
@@ -466,6 +549,102 @@ export default function ResultsView({}: ResultsViewProps) {
           </div>
         )}
       </div>
+
+      {/* Edit Result Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl overflow-hidden bg-white shadow-xl">
+          <div className="p-8">
+            <DialogHeader className="mb-6">
+              <DialogTitle className="text-2xl font-bold text-center text-gray-800 flex items-center justify-center gap-2">
+                <Trophy className="w-6 h-6 text-yellow-500 animate-bounce" />
+                Update Competitor Result
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-5">
+              {/* Event Select */}
+              <div className="space-y-1.5">
+                <Label htmlFor="editEvent" className="text-gray-600 font-medium">Event</Label>
+                <SearchableInfiniteSelect
+                  endpoint="/event"
+                  fields="_id,name,class"
+                  placeholder="Select Event"
+                  value={editEventId}
+                  onChange={(value, event) => {
+                    setEditEventId(value);
+                    setEditSelectedEvent(event);
+                    setEditClassName(""); 
+                    setEditDriverId("");
+                  }}
+                  displayValue={(evt) => evt.name}
+                />
+              </div>
+
+              {/* Class Selector */}
+              <div className="space-y-1.5">
+                <Label htmlFor="editClass" className="text-gray-600 font-medium">Competitor Class</Label>
+                <div className="relative">
+                  <select
+                    id="editClass"
+                    value={editClassName}
+                    disabled={!editEventId}
+                    onChange={(e) => {
+                      setEditClassName(e.target.value);
+                      setEditDriverId("");
+                    }}
+                    className="flex h-12 w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-[#3b82f6] cursor-pointer transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {!editEventId ? "Please select event first" : "Select Class"}
+                    </option>
+                    {(editSelectedEvent?.class || []).map((cls: any) => (
+                      <option key={cls.name || cls} value={cls.name || cls}>
+                        {cls.name || cls}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-4 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Driver Select */}
+              <div className="space-y-1.5">
+                <Label htmlFor="editDriver" className="text-gray-600 font-medium">Driver</Label>
+                <Input
+                  id="editDriver"
+                  type="text"
+                  value={editDriverName}
+                  disabled={true}
+                  className="h-12 border-gray-200 bg-gray-50 text-gray-500 rounded-lg text-sm cursor-not-allowed font-semibold"
+                />
+              </div>
+
+              {/* Distance */}
+              <div className="space-y-1.5">
+                <Label htmlFor="editDistance" className="text-gray-600 font-medium">Distance (ft)</Label>
+                <Input
+                  id="editDistance"
+                  type="number"
+                  step="0.01"
+                  value={editDistance}
+                  onChange={(e) => setEditDistance(e.target.value)}
+                  placeholder="e.g., 250.50"
+                  className="h-12 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
+                />
+              </div>
+
+              <Button
+                onClick={handleUpdateResult}
+                disabled={isEditingSubmitting}
+                className="w-full bg-[#3b82f6] hover:bg-blue-600 text-white h-12 rounded-lg text-base mt-4 flex items-center justify-center gap-2 font-semibold transition-all active:scale-[0.99]"
+              >
+                {isEditingSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                Update Result
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Plus, Edit, Calendar, MapPin, Clock, UploadCloud, X, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Calendar, MapPin, Clock, UploadCloud, X, AlertCircle, DollarSign } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { ClassTable } from "@/components/events/ClassTable";
@@ -35,6 +35,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
   const [editVenue, setEditVenue] = useState("");
+  const [editEntryFee, setEditEntryFee] = useState("");
   const [editAdditionalInfo, setEditAdditionalInfo] = useState("");
   const [editSelectedFiles, setEditSelectedFiles] = useState<File[]>([]);
   const editFileInputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +65,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
         }
         setEditTime(response.data.time || "");
         setEditVenue(response.data.venue || "");
+        setEditEntryFee(String(response.data.entryFee || ""));
         setEditAdditionalInfo(response.data.additionalInfo || "");
       } else {
         setError(response.message || "Failed to load event details");
@@ -80,6 +82,46 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
     fetchEventDetails();
   }, [eventId]);
 
+  const handleMarkEventCompleted = async () => {
+    if (!event || !event.class || event.class.length === 0) return;
+    
+    const uncompletedClasses = event.class.filter((c: any) => c.status !== "completed");
+    
+    if (uncompletedClasses.length === 0) {
+      toast.success("Event is already completed!");
+      return;
+    }
+    
+    setIsUpdating(true);
+    toast.loading("Marking event as completed...", { id: "complete-event" });
+    
+    try {
+      let allSuccess = true;
+      for (const cls of uncompletedClasses) {
+        const response = await myFetch(`/event/${eventId}/class/${encodeURIComponent(cls.name)}/status`, {
+          method: "PATCH",
+          body: { status: "completed" },
+        });
+        if (!response.success) {
+          allSuccess = false;
+        }
+      }
+      
+      if (allSuccess) {
+        toast.success("Event and all classes marked as completed!", { id: "complete-event" });
+        fetchEventDetails();
+      } else {
+        toast.error("Failed to mark some classes as completed", { id: "complete-event" });
+        fetchEventDetails();
+      }
+    } catch (error) {
+      console.error("Error marking event as completed:", error);
+      toast.error("An error occurred while marking event as completed", { id: "complete-event" });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
@@ -92,8 +134,20 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   };
 
   const handleEditSubmit = async () => {
-    if (!editName || !editDate || !editTime || !editVenue) {
+    if (!editName || !editDate || !editTime || !editVenue || !editEntryFee) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Validate past date and time
+    const selectedDateTime = new Date(`${editDate}T${editTime}`);
+    if (selectedDateTime < new Date()) {
+      toast.error("Event date and time cannot be in the past");
+      return;
+    }
+
+    if (isNaN(Number(editEntryFee)) || Number(editEntryFee) <= 0) {
+      toast.error("Please enter a valid positive entry fee");
       return;
     }
 
@@ -107,6 +161,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
         date: editDate,
         time: editTime,
         venue: editVenue,
+        entryFee: Number(editEntryFee),
         additionalInfo: editAdditionalInfo,
       };
 
@@ -172,7 +227,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
     : "N/A";
 
   return (
-    <div className="flex flex-col w-full h-full max-w-[1200px] mx-auto p-6 md:p-10">
+    <div className="flex flex-col w-full h-full max-w-[1200px] mx-auto p-6 md:p-10 pb-20 md:pb-28">
       {/* Top Navigation */}
       <div className="flex items-start sm:items-center justify-between gap-6 mb-8 border-b border-gray-100 pb-6 flex-col sm:flex-row">
         <div className="flex items-center gap-4">
@@ -189,15 +244,31 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
           </div>
         </div>
 
-        {/* Edit Event Details Dialog */}
-        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <button
-            onClick={() => setIsEditOpen(true)}
-            className="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-semibold text-sm transition-all shadow-sm w-full sm:w-auto justify-center active:scale-[0.98]"
-          >
-            <Edit className="w-4 h-4 text-gray-500" />
-            Edit Event
-          </button>
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end">
+          {/* Mark As Completed Button */}
+          {event.class && event.class.length > 0 && event.class.every((c: any) => c.status === "completed") ? (
+            <span className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg font-bold text-sm shadow-sm select-none">
+              ✓ Event Completed
+            </span>
+          ) : (
+            <button
+              onClick={handleMarkEventCompleted}
+              disabled={isUpdating}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all shadow-sm justify-center active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+            >
+              Mark As Completed
+            </button>
+          )}
+
+          {/* Edit Event Details Dialog */}
+          <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+            <button
+              onClick={() => setIsEditOpen(true)}
+              className="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-semibold text-sm transition-all shadow-sm w-full sm:w-auto justify-center active:scale-[0.98] cursor-pointer"
+            >
+              <Edit className="w-4 h-4 text-gray-500" />
+              Edit Event
+            </button>
           <DialogContent className="sm:max-w-[600px] p-0 gap-0 border-gray-200 max-h-[90vh] overflow-y-auto">
             <DialogHeader className="p-6 pb-4 border-b border-gray-100 flex flex-row items-center justify-between">
               <DialogTitle className="text-xl font-semibold">
@@ -230,6 +301,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                   <input
                     type="date"
                     value={editDate}
+                    min={new Date().toISOString().split("T")[0]}
                     onChange={(e) => setEditDate(e.target.value)}
                     className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     required
@@ -249,19 +321,34 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                 </div>
               </div>
 
-              {/* Venue */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Venue *
-                </label>
-                <input
-                  type="text"
-                  value={editVenue}
-                  onChange={(e) => setEditVenue(e.target.value)}
-                  placeholder="e.g., County Fairgrounds"
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  required
-                />
+              {/* Venue & Entry Fee */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Venue *
+                  </label>
+                  <input
+                    type="text"
+                    value={editVenue}
+                    onChange={(e) => setEditVenue(e.target.value)}
+                    placeholder="e.g., County Fairgrounds"
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Entry Fee ($) *
+                  </label>
+                  <input
+                    type="number"
+                    value={editEntryFee}
+                    onChange={(e) => setEditEntryFee(e.target.value)}
+                    placeholder="e.g., 50"
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  />
+                </div>
               </div>
 
               {/* Additional Info */}
@@ -347,6 +434,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Main Details and Media Layout */}
@@ -411,6 +499,16 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
               <div className="flex flex-col justify-center">
                 <span className="text-[13px] text-gray-500 font-medium uppercase tracking-wide">Venue</span>
                 <span className="text-[15px] font-bold text-gray-900 mt-0.5">{event.venue || "N/A"}</span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="p-2.5 bg-blue-50 border border-blue-100/50 rounded-xl shadow-sm">
+                <DollarSign className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div className="flex flex-col justify-center">
+                <span className="text-[13px] text-gray-500 font-medium uppercase tracking-wide">Entry Fee</span>
+                <span className="text-[15px] font-bold text-gray-900 mt-0.5">${event.entryFee || 0}</span>
               </div>
             </div>
           </div>
