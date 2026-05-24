@@ -252,7 +252,7 @@ export default function ResultsView({}: ResultsViewProps) {
               Add New Result
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl overflow-hidden bg-white shadow-xl">
+          <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl bg-white shadow-xl">
             <div className="p-8">
               <DialogHeader className="mb-6">
                 <DialogTitle className="text-2xl font-bold text-center text-gray-800 flex items-center justify-center gap-2">
@@ -312,7 +312,7 @@ export default function ResultsView({}: ResultsViewProps) {
                   <Label htmlFor="modalDriver" className="text-gray-600 font-medium">Driver</Label>
                   <SearchableInfiniteSelect
                     endpoint={modalEventId && modalClassName ? "/event-registration" : "/user"}
-                    fields="_id,email,fullName,vehicleName"
+                    fields="_id,email,fullName,vehicleName,phone"
                     extraParams={
                       modalEventId && modalClassName
                         ? { event: modalEventId, class: modalClassName, status: "approved" }
@@ -552,7 +552,7 @@ export default function ResultsView({}: ResultsViewProps) {
 
       {/* Edit Result Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl overflow-hidden bg-white shadow-xl">
+        <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl bg-white shadow-xl">
           <div className="p-8">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-2xl font-bold text-center text-gray-800 flex items-center justify-center gap-2">

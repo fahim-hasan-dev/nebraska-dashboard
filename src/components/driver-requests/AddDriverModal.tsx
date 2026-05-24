@@ -31,7 +31,7 @@ export function AddDriverModal({ children }: { children: React.ReactNode }) {
       }
     }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[480px] p-0 border-0 rounded-2xl overflow-hidden bg-white shadow-xl">
+      <DialogContent className="sm:max-w-[480px] p-0 border-0 rounded-2xl bg-white shadow-xl">
         <DialogHeader className="p-6 pb-4 flex flex-row items-center justify-between border-b border-gray-100">
           <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-[#3b82f6]" />

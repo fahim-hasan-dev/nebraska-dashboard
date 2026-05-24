@@ -100,7 +100,7 @@ export default function SearchableInfiniteSelect({
     [endpoint, fields, JSON.stringify(extraParams), transformData, disabled, isLoading]
   );
 
-  // Initial fetch / load details when value is set or changes
+  // Initial load / load details when value is set or changes
   useEffect(() => {
     if (!value) {
       setSelectedItem(null);
@@ -234,37 +234,41 @@ export default function SearchableInfiniteSelect({
             onScroll={handleScroll}
             className="max-h-60 overflow-y-auto divide-y divide-gray-50/50 py-1"
           >
-            {items.map((item) => {
-              const id = item._id || item.id;
-              const isSelected = value === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => {
-                    onChange(id, item);
-                    setIsOpen(false);
-                  }}
-                  className={`flex w-full items-center px-4 py-2.5 text-sm text-left hover:bg-gray-50 active:bg-gray-100 transition-colors font-medium ${
-                    isSelected ? "bg-blue-50/40 text-blue-600 font-semibold" : "text-gray-700"
-                  }`}
-                >
-                  <span className="truncate">{displayValue(item)}</span>
-                </button>
-              );
-            })}
+            {(() => {
+              if (items.length === 0 && !isLoading) {
+                return (
+                  <div className="py-4 text-center text-xs text-gray-400 font-medium">
+                    No matching results found
+                  </div>
+                );
+              }
+
+              return items.map((item) => {
+                const id = item._id || item.id;
+                const isSelected = value === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      onChange(id, item);
+                      setIsOpen(false);
+                    }}
+                    className={`flex w-full items-center px-4 py-2.5 text-sm text-left hover:bg-gray-50 active:bg-gray-100 transition-colors font-medium ${
+                      isSelected ? "bg-blue-50/40 text-blue-600 font-semibold" : "text-gray-700"
+                    }`}
+                  >
+                    <span className="truncate">{displayValue(item)}</span>
+                  </button>
+                );
+              });
+            })()}
 
             {/* Loaders and status elements */}
             {isLoading && (
               <div className="flex items-center justify-center py-3 text-xs text-gray-400 gap-1.5 font-medium">
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
                 Loading options...
-              </div>
-            )}
-
-            {!isLoading && items.length === 0 && (
-              <div className="py-4 text-center text-xs text-gray-400 font-medium">
-                No matching results found
               </div>
             )}
           </div>
