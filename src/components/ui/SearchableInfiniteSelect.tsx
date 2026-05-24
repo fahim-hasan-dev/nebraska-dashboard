@@ -63,7 +63,9 @@ export default function SearchableInfiniteSelect({
         });
 
         if (res.success && res.data) {
-          let rawData = Array.isArray(res.data) ? res.data : (res.data.data || []);
+          let rawData = Array.isArray(res.data) 
+            ? res.data 
+            : (res.data.data || res.data.users || res.data.events || []);
           
           if (transformData) {
             rawData = transformData(rawData);
