@@ -219,7 +219,7 @@ export default function RulebookView() {
                 </div>
 
                 <a
-                  href={currentFileUrl}
+                  href={`${process.env.NEXT_PUBLIC_SERVER_URL}${currentFileUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 py-2.5 rounded-lg text-sm font-semibold transition-all mt-2 active:scale-[0.98]"
