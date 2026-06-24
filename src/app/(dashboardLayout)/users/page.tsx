@@ -1,25 +1,55 @@
-import UsersTable from "@/components/page/users/UsersTable";
-import { demoUsersData } from "@/demoData/users";
-const UsersPage = async ({ searchParams }) => {
-  const { role } = await searchParams;
-  // Build query parameters for the backend request
-  // const queryParams = new URLSearchParams({
-  //   ...(role && { role }),
-  //   ...(searchTerm && { searchTerm }),
-  //   ...(page && { page }),
-  // });
+export const dynamic = "force-dynamic";
 
-  // Fetch data from the backend when backend is ready
-  // const res = await myFetch(`/user/users?${queryParams.toString()}`, {
-  //   tags: ["users"],
-  // });
+import UsersTable from "@/components/page/users/UsersTable";
+import { myFetch } from "@/utils/myFetch";
+
+interface UsersPageProps {
+  searchParams: Promise<{
+    role?: string;
+    searchTerm?: string;
+    page?: string;
+  }>;
+}
+
+const UsersPage = async ({ searchParams }: UsersPageProps) => {
+  const { role, searchTerm, page } = await searchParams;
+
+  // Build query parameters for the backend request
+  const queryParams = new URLSearchParams();
+  if (role) queryParams.append("role", role);
+  if (searchTerm) queryParams.append("searchTerm", searchTerm);
+  if (page) queryParams.append("page", page);
+  queryParams.append("limit", "10");
+
+  let users = [];
+  let meta = { page: 1, totalPage: 1, total: 0, limit: 10 };
+
+  try {
+    // Fetch users from backend api
+    const res = await myFetch(`/user?${queryParams.toString()}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (res.success && res.data) {
+      users = res.data.users || [];
+      meta = res.pagination || res.data.meta || {
+        page: Number(page) || 1,
+        totalPage: 1,
+        total: users.length,
+        limit: 10,
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching users in UsersPage:", error);
+  }
 
   return (
     <>
       <UsersTable
-        users={demoUsersData as never[]}
-        meta={{ page: 1, totalPage: 1, total: 12 } as never}
-        filters={{ role }}
+        users={users}
+        meta={meta}
+        filters={{ role, searchTerm }}
       />
     </>
   );

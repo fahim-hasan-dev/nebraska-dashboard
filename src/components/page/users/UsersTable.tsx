@@ -12,8 +12,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown } from "lucide-react";
-
+import { ChevronDown, Search, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,35 +21,83 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import userTableColumns from "@/components/tableColumns/userTableColumn";
+import { createUserTableColumns } from "@/components/tableColumns/userTableColumn";
 import { capitalizeSentence } from "@/utils/capitalizeSentence";
-import { userGenders, userRoles } from "@/constants/user";
 import { IUser } from "@/types/user";
 import { useUpdateMultiSearchParams } from "@/hooks/useUpdateMultiSearchParams";
 import DashboardTable from "@/components/shared/table";
 import TablePagination from "@/components/shared/table-pagination";
-import { demoUsersData } from "@/demoData/users";
+import CreateDriverModal from "./CreateDriverModal";
+import { myFetch } from "@/utils/myFetch";
+import toast from "react-hot-toast";
 
-// Extract unique roles from data
-const roles = Array.from(new Set(userRoles.map((item) => item.title)));
-// extract unique locations from data
-const locations = Array.from(
-  new Set(demoUsersData.map((item) => item.location))
-);
+interface UsersTableProps {
+  users: IUser[];
+  filters: {
+    role?: string;
+    searchTerm?: string;
+  };
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPage: number;
+  };
+}
 
-const UsersTable = ({ users = [], filters, meta }) => {
+const UsersTable = ({ users = [], filters, meta }: UsersTableProps) => {
+  const router = useRouter();
   const updateMultiSearchParams = useUpdateMultiSearchParams();
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  
+  // Search state
+  const [searchVal, setSearchVal] = React.useState(filters?.searchTerm || "");
+
+  // Debounced search trigger
+  React.useEffect(() => {
+    const currentSearchTerm = filters?.searchTerm || "";
+    if (searchVal === currentSearchTerm) {
+      return;
+    }
+
+    const delayDebounce = setTimeout(() => {
+      updateMultiSearchParams({ searchTerm: searchVal || null, page: null });
+    }, 450);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchVal, filters?.searchTerm, updateMultiSearchParams]);
+
+  // Sync state if search filter changes externally
+  React.useEffect(() => {
+    setSearchVal(filters?.searchTerm || "");
+  }, [filters?.searchTerm]);
+
+  const handleDeleteUser = React.useCallback(async (id: string) => {
+    toast.loading("Deleting user...", { id: "delete-user" });
+    try {
+      const res = await myFetch(`/user/${id}`, {
+        method: "DELETE",
+      });
+      if (res.success) {
+        toast.success("User deleted successfully!", { id: "delete-user" });
+        router.refresh();
+      } else {
+        toast.error(res.message || "Failed to delete user.", { id: "delete-user" });
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("An error occurred while deleting user.", { id: "delete-user" });
+    }
+  }, [router]);
+
+  const columns = React.useMemo(() => createUserTableColumns(handleDeleteUser), [handleDeleteUser]);
 
   const table = useReactTable<IUser>({
     data: users || [],
-    columns: userTableColumns as ColumnDef<IUser>[],
+    columns: columns as ColumnDef<IUser>[],
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -63,116 +111,78 @@ const UsersTable = ({ users = [], filters, meta }) => {
       columnFilters,
       columnVisibility,
       rowSelection,
-      // pagination: { pageIndex: 0, pageSize: 10 },
     },
   });
 
+  const roles = ["driver", "fan"];
+
   return (
-    <div className="w-full bg-white p-4 rounded-xl h-full">
-      {/* table top option bar */}
-      <section className="flex flex-wrap justify-center md:justify-end gap-4 items-center pb-4">
-        {/* location Filter Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="capitalize shadow text-[#929292]"
-            >
-              {filters?.location ? `${filters?.location}` : "Location"}{" "}
-              <ChevronDown className="text-primary" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem
-              onClick={() =>
-                updateMultiSearchParams({ location: null, page: null })
-              }
-            >
-              All locations
-            </DropdownMenuItem>
-            {locations.map((item) => (
-              <DropdownMenuItem
-                key={item}
-                onClick={() =>
-                  updateMultiSearchParams({ location: item, page: null })
-                }
-              >
-                {capitalizeSentence(item)}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+    <div className="w-full bg-white p-6 rounded-xl border border-gray-100 flex flex-col gap-6 mb-24">
+      {/* Header Option Bar */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        {/* Search & Filters */}
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Search bar */}
+          <div className="relative w-full sm:w-[280px]">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchVal}
+              onChange={(e) => setSearchVal(e.target.value)}
+              placeholder="Search by name, email or phone..."
+              className="w-full h-11 pl-10 pr-4 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/40 focus:border-[#3b82f6] transition-all font-semibold text-gray-800"
+            />
+          </div>
 
-        {/* Role Filter Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="capitalize shadow text-[#929292]"
-            >
-              {filters?.role ? `${filters?.role}` : "Role"}{" "}
-              <ChevronDown className="text-primary" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem
-              onClick={() =>
-                updateMultiSearchParams({ role: null, page: null })
-              }
-            >
-              All Roles
-            </DropdownMenuItem>
-            {roles.map((item) => (
-              <DropdownMenuItem
-                key={item}
-                onClick={() =>
-                  updateMultiSearchParams({ role: item, page: null })
-                }
+          {/* Role Filter Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="capitalize shadow-none border-gray-200 h-11 font-semibold text-gray-600 bg-white hover:bg-gray-50 flex items-center gap-1"
               >
-                {capitalizeSentence(item)}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Gender Filter Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="capitalize shadow text-[#929292]"
-            >
-              {filters?.gender ? `${filters?.gender}` : "Gender"}{" "}
-              <ChevronDown className="text-primary" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem
-              onClick={() =>
-                updateMultiSearchParams({ gender: null, page: null })
-              }
-            >
-              All Genders
-            </DropdownMenuItem>
-            {userGenders.map((item) => (
+                {filters?.role ? `${capitalizeSentence(filters.role)}` : "Role"}
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40 font-semibold text-gray-700">
               <DropdownMenuItem
-                key={item}
                 onClick={() =>
-                  updateMultiSearchParams({ gender: item, page: null })
+                  updateMultiSearchParams({ role: null, page: null })
                 }
+                className="cursor-pointer"
               >
-                {capitalizeSentence(item)}
+                All Roles
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </section>
+              {roles.map((item) => (
+                <DropdownMenuItem
+                  key={item}
+                  onClick={() =>
+                    updateMultiSearchParams({ role: item, page: null })
+                  }
+                  className="cursor-pointer"
+                >
+                  {capitalizeSentence(item)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-      {/* table and pagination*/}
-      <section>
-        <DashboardTable table={table} columns={userTableColumns} />
+        {/* Create Manual Account Action */}
+        <CreateDriverModal onSuccess={() => router.refresh()}>
+          <button className="flex items-center justify-center gap-2 bg-[#3b82f6] hover:bg-blue-600 text-white px-5 h-11 rounded-lg font-bold text-sm transition-all shadow-sm active:scale-[0.98] w-full md:w-auto">
+            <Plus className="w-4 h-4" />
+            Create Driver Account
+          </button>
+        </CreateDriverModal>
+      </div>
+
+      {/* Table Section */}
+      <div className="flex flex-col gap-4 border border-gray-100 rounded-xl overflow-hidden">
+        <DashboardTable table={table} columns={columns} />
         <TablePagination table={table} meta={meta} />
-      </section>
+      </div>
     </div>
   );
 };

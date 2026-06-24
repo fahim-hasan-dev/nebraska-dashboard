@@ -9,10 +9,16 @@ import {
   Trophy,
   UserPlus,
   CircleHelp,
+  Users,
 } from "lucide-react";
 
 export const sidebarMenu = {
   navMain: [
+    {
+      title: "Users",
+      url: "/users",
+      icon: Users,
+    },
     {
       title: "Events",
       url: "/events",

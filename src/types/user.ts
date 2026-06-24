@@ -1,16 +1,12 @@
 export interface IUser {
   _id: string;
-  firstName: string;
-  lastName: string;
-  gender: string;
+  fullName: string;
   email: string;
-  role: string;
-  photo: string;
-  birthday: string;
-  bio: string;
-  location: string;
-  isVacation: boolean;
-  isVerified: boolean;
-  isBlocked: boolean;
-  isDeleted: boolean;
+  phone: string;
+  address: string;
+  role: "admin" | "fan" | "driver";
+  verified: boolean;
+  status: "active" | "restricted" | "deleted";
+  vehicleName?: string;
+  image?: string;
 }

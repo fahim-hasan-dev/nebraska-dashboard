@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 
 export const useUpdateMultiSearchParams = () => {
   const router = useRouter();
 
-  const updateMultiSearchParams = (updates: Record<string, string | null>) => {
+  const updateMultiSearchParams = useCallback((updates: Record<string, string | null>) => {
     const searchParams = new URLSearchParams(window.location.search);
 
     // Iterate over the updates object and set or delete keys
@@ -19,7 +20,7 @@ export const useUpdateMultiSearchParams = () => {
 
     const newPath = `${window.location.pathname}?${searchParams.toString()}`;
     router.push(newPath);
-  };
+  }, [router]);
 
   return updateMultiSearchParams;
 };
