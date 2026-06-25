@@ -6,7 +6,6 @@ import { useState, useEffect, useRef } from "react";
 import { ClassTable } from "@/components/events/ClassTable";
 import { AddClassModal } from "@/components/events/AddClassModal";
 import { myFetch } from "@/utils/myFetch";
-import { config } from "@/config/env-config";
 import toast from "react-hot-toast";
 import { getImageUrl } from "@/utils/imageUrl";
 import {
@@ -14,9 +13,26 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+
+interface IClassItem {
+  name: string;
+  status: "pending" | "live" | "completed";
+}
+
+interface IEventDetails {
+  _id: string;
+  name: string;
+  date: string;
+  time: string;
+  venue: string;
+  entryFee: number;
+  additionalInfo?: string;
+  class?: IClassItem[];
+  pictures?: string[];
+  isRegistered?: boolean;
+}
 
 interface EventDetailViewProps {
   eventId: string;
@@ -24,7 +40,7 @@ interface EventDetailViewProps {
 
 export default function EventDetailView({ eventId }: EventDetailViewProps) {
   const router = useRouter();
-  const [event, setEvent] = useState<any>(null);
+  const [event, setEvent] = useState<IEventDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +54,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   const [editEntryFee, setEditEntryFee] = useState("");
   const [editAdditionalInfo, setEditAdditionalInfo] = useState("");
   const [editSelectedFiles, setEditSelectedFiles] = useState<File[]>([]);
+  const [editExistingPictures, setEditExistingPictures] = useState<string[]>([]);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchEventDetails = async () => {
@@ -67,6 +84,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
         setEditVenue(response.data.venue || "");
         setEditEntryFee(String(response.data.entryFee || ""));
         setEditAdditionalInfo(response.data.additionalInfo || "");
+        setEditExistingPictures(response.data.pictures || []);
       } else {
         setError(response.message || "Failed to load event details");
       }
@@ -82,44 +100,8 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
     fetchEventDetails();
   }, [eventId]);
 
-  const handleMarkEventCompleted = async () => {
-    if (!event || !event.class || event.class.length === 0) return;
-    
-    const uncompletedClasses = event.class.filter((c: any) => c.status !== "completed");
-    
-    if (uncompletedClasses.length === 0) {
-      toast.success("Event is already completed!");
-      return;
-    }
-    
-    setIsUpdating(true);
-    toast.loading("Marking event as completed...", { id: "complete-event" });
-    
-    try {
-      let allSuccess = true;
-      for (const cls of uncompletedClasses) {
-        const response = await myFetch(`/event/${eventId}/class/${encodeURIComponent(cls.name)}/status`, {
-          method: "PATCH",
-          body: { status: "completed" },
-        });
-        if (!response.success) {
-          allSuccess = false;
-        }
-      }
-      
-      if (allSuccess) {
-        toast.success("Event and all classes marked as completed!", { id: "complete-event" });
-        fetchEventDetails();
-      } else {
-        toast.error("Failed to mark some classes as completed", { id: "complete-event" });
-        fetchEventDetails();
-      }
-    } catch (error) {
-      console.error("Error marking event as completed:", error);
-      toast.error("An error occurred while marking event as completed", { id: "complete-event" });
-    } finally {
-      setIsUpdating(false);
-    }
+  const removeExistingPicture = (index: number) => {
+    setEditExistingPictures((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,6 +145,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
         venue: editVenue,
         entryFee: Number(editEntryFee),
         additionalInfo: editAdditionalInfo,
+        pictures: editExistingPictures,
       };
 
       formData.append("data", JSON.stringify(dataPayload));
@@ -245,25 +228,21 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end">
-          {/* Mark As Completed Button */}
-          {event.class && event.class.length > 0 && event.class.every((c: any) => c.status === "completed") ? (
+          {/* Event Completed Label */}
+          {event.class && event.class.length > 0 && event.class.every((c: IClassItem) => c.status === "completed") && (
             <span className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg font-bold text-sm shadow-sm select-none">
               ✓ Event Completed
             </span>
-          ) : (
-            <button
-              onClick={handleMarkEventCompleted}
-              disabled={isUpdating}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all shadow-sm justify-center active:scale-[0.98] disabled:opacity-50 cursor-pointer"
-            >
-              Mark As Completed
-            </button>
           )}
 
           {/* Edit Event Details Dialog */}
           <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
             <button
-              onClick={() => setIsEditOpen(true)}
+              onClick={() => {
+                setEditExistingPictures(event?.pictures || []);
+                setEditSelectedFiles([]);
+                setIsEditOpen(true);
+              }}
               className="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-semibold text-sm transition-all shadow-sm w-full sm:w-auto justify-center active:scale-[0.98] cursor-pointer"
             >
               <Edit className="w-4 h-4 text-gray-500" />
@@ -363,6 +342,37 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                   className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                 />
               </div>
+
+              {/* Existing Pictures Previews */}
+              {editExistingPictures.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Existing Tractor Pictures ({editExistingPictures.length})
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {editExistingPictures.map((pic, idx) => (
+                      <div
+                        key={idx}
+                        className="relative aspect-video rounded-lg border border-gray-200 overflow-hidden group shadow-sm animate-fadeIn"
+                      >
+                        <img
+                          src={getImageUrl(pic)}
+                          alt={`Existing ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeExistingPicture(idx)}
+                          className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-600 text-white rounded-full p-1 transition-colors cursor-pointer"
+                          title="Remove image"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Picture Upload */}
               <div className="flex flex-col gap-2">

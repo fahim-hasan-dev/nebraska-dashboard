@@ -9,7 +9,6 @@ const SponsorsPage = async () => {
   try {
     const response = await myFetch("/sponsor?limit=100", {
       method: "GET",
-      cache: "no-store", // Ensure server-side fetch is dynamic
     });
 
     if (response.success && Array.isArray(response.data)) {

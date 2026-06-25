@@ -3,6 +3,7 @@
 
 import { config } from "@/config/env-config";
 import { getToken } from "./get-token";
+import { revalidateTag } from "next/cache";
 
 export interface FetchResponse {
   success: boolean;
@@ -51,18 +52,42 @@ export const myFetch = async (
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
   };
 
+  // Determine the resource name for tagging (e.g. "/sponsor?limit=100" -> "sponsor")
+  const pathWithoutQuery = url.split("?")[0];
+  const urlSegments = pathWithoutQuery.split("/").filter(Boolean);
+  const resource = urlSegments[0]; // e.g. "sponsor", "user", "event"
+
+  // Setup tags for caching
+  const finalTags = tags || (resource ? [resource] : []);
+
+  const fetchOptions: RequestInit = {
+    method,
+    headers: reqHeaders,
+    ...(hasBody && { body: isFormData ? body : JSON.stringify(body) }),
+    ...(method === "GET"
+      ? {
+          cache: cache === "no-store" ? "no-store" : "force-cache",
+          next: { tags: finalTags },
+        }
+      : { cache: "no-store" }),
+  };
+
   try {
-    const response = await fetch(`${config.baseURL}${url}`, {
-      method,
-      headers: reqHeaders,
-      ...(hasBody && { body: isFormData ? body : JSON.stringify(body) }),
-      ...(tags && { next: { tags } }),
-      ...(!(method === "GET") ? { cache: "no-store" } : { cache: cache }),
-    });
+    const response = await fetch(`${config.baseURL}${url}`, fetchOptions);
 
     const data = await response.json();
 
     if (response.ok) {
+      // If mutation succeeded, automatically revalidate the resource tag
+      if (method !== "GET" && resource) {
+        try {
+          revalidateTag(resource);
+          console.log(`[myFetch] Automatically revalidated tag: "${resource}" after ${method} request to ${url}`);
+        } catch (revalError) {
+          console.error(`[myFetch] Error revalidating tag: "${resource}"`, revalError);
+        }
+      }
+
       return {
         success: data?.success ?? true,
         message: data?.message,
@@ -87,3 +112,4 @@ export const myFetch = async (
     };
   }
 };
+

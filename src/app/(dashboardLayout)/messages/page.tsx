@@ -9,7 +9,6 @@ const MessagesPage = async () => {
   try {
     const response = await myFetch("/message?limit=100", {
       method: "GET",
-      cache: "no-store", // Ensure server-side fetch is dynamic
     });
 
     if (response.success && response.data) {

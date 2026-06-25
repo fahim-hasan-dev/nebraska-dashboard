@@ -11,7 +11,6 @@ const EventsPage = async () => {
     // Fetch initial 5 events from backend server
     const response = await myFetch("/event?page=1&limit=15", {
       method: "GET",
-      cache: "no-store", // Ensure server-side fetch is dynamic
     });
 
     if (response.success && response.data) {
