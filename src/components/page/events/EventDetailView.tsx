@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Plus, Edit, Calendar, MapPin, Clock, UploadCloud, X, AlertCircle, DollarSign } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Calendar, MapPin, Clock, UploadCloud, X, AlertCircle, DollarSign, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { ClassTable } from "@/components/events/ClassTable";
@@ -8,6 +8,7 @@ import { AddClassModal } from "@/components/events/AddClassModal";
 import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
 import { getImageUrl } from "@/utils/imageUrl";
+import { getAddressSuggestions, getPlaceCoordinates } from "@/app/actions/mapActions";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,10 @@ interface IEventDetails {
   date: string;
   time: string;
   venue: string;
+  location?: {
+    type: "Point";
+    coordinates: [number, number];
+  };
   entryFee: number;
   additionalInfo?: string;
   class?: IClassItem[];
@@ -57,6 +62,55 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   const [editExistingPictures, setEditExistingPictures] = useState<string[]>([]);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Map and Address Autocomplete states for editing
+  const [editSuggestions, setEditSuggestions] = useState<any[]>([]);
+  const [showEditSuggestions, setShowEditSuggestions] = useState(false);
+  const [editCoordinates, setEditCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [isSearchingEditSuggestions, setIsSearchingEditSuggestions] = useState(false);
+  const editSuggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (editSuggestionsRef.current && !editSuggestionsRef.current.contains(e.target as Node)) {
+        setShowEditSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleEditVenueChange = async (val: string) => {
+    setEditVenue(val);
+    setEditCoordinates(null); // Reset coordinates when user types
+    if (val.trim().length >= 3) {
+      setIsSearchingEditSuggestions(true);
+      const results = await getAddressSuggestions(val);
+      setEditSuggestions(results);
+      setShowEditSuggestions(true);
+      setIsSearchingEditSuggestions(false);
+    } else {
+      setEditSuggestions([]);
+      setShowEditSuggestions(false);
+    }
+  };
+
+  const handleSelectEditSuggestion = async (suggestion: any) => {
+    if (suggestion.placeId === "error") {
+      setShowEditSuggestions(false);
+      return;
+    }
+    setEditVenue(suggestion.description);
+    setShowEditSuggestions(false);
+    toast.loading("Locating coordinates...", { id: "locate-edit-coords" });
+    const coords = await getPlaceCoordinates(suggestion.placeId);
+    if (coords) {
+      setEditCoordinates(coords);
+      toast.success("Location locked!", { id: "locate-edit-coords" });
+    } else {
+      toast.error("Failed to retrieve coordinates for this address", { id: "locate-edit-coords" });
+    }
+  };
+
   const fetchEventDetails = async () => {
     setIsLoading(true);
     try {
@@ -85,6 +139,16 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
         setEditEntryFee(String(response.data.entryFee || ""));
         setEditAdditionalInfo(response.data.additionalInfo || "");
         setEditExistingPictures(response.data.pictures || []);
+
+        // Load existing coordinates
+        if (response.data.location?.coordinates && response.data.location.coordinates.length === 2) {
+          setEditCoordinates({
+            lng: response.data.location.coordinates[0],
+            lat: response.data.location.coordinates[1],
+          });
+        } else {
+          setEditCoordinates(null);
+        }
       } else {
         setError(response.message || "Failed to load event details");
       }
@@ -128,6 +192,12 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
       return;
     }
 
+    // Enforce geocoded address selection
+    if (!editCoordinates) {
+      toast.error("Please select a valid venue location from the address suggestions");
+      return;
+    }
+
     if (isNaN(Number(editEntryFee)) || Number(editEntryFee) <= 0) {
       toast.error("Please enter a valid positive entry fee");
       return;
@@ -143,6 +213,10 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
         date: editDate,
         time: editTime,
         venue: editVenue,
+        location: {
+          type: "Point",
+          coordinates: [editCoordinates.lng, editCoordinates.lat], // [longitude, latitude]
+        },
         entryFee: Number(editEntryFee),
         additionalInfo: editAdditionalInfo,
         pictures: editExistingPictures,
@@ -302,18 +376,49 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
 
               {/* Venue & Entry Fee */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 relative" ref={editSuggestionsRef}>
                   <label className="text-sm font-medium text-gray-700">
                     Venue *
                   </label>
                   <input
                     type="text"
                     value={editVenue}
-                    onChange={(e) => setEditVenue(e.target.value)}
-                    placeholder="e.g., County Fairgrounds"
+                    onChange={(e) => handleEditVenueChange(e.target.value)}
+                    onFocus={() => {
+                      if (editSuggestions.length > 0) setShowEditSuggestions(true);
+                    }}
+                    placeholder="Search address..."
                     className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     required
                   />
+
+                  {/* Location locked feedback */}
+                  {editCoordinates && (
+                    <span className="text-[10px] text-green-600 font-bold absolute right-2.5 top-8.5 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
+                      ✓ Geocoded
+                    </span>
+                  )}
+
+                  {/* Suggestions popover */}
+                  {showEditSuggestions && (
+                    <div className="absolute left-0 right-0 top-[68px] z-50 bg-white border border-gray-250 rounded-xl shadow-xl max-h-52 overflow-y-auto divide-y divide-gray-100 animate-in fade-in slide-in-from-top-1 duration-150">
+                      {isSearchingEditSuggestions ? (
+                        <div className="px-4 py-3 text-xs text-gray-400 font-medium flex items-center gap-1.5">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                          Searching addresses...
+                        </div>
+                      ) : editSuggestions.map((s, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectEditSuggestion(s)}
+                          className="w-full text-left px-4 py-2.5 hover:bg-gray-50 text-xs font-semibold text-gray-700 truncate block transition-colors"
+                        >
+                          {s.description}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-gray-700">

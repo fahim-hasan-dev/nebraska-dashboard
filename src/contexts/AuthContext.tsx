@@ -32,7 +32,7 @@ export const AuthProvider = ({
   // Function to update user state and cookies
   const setToken = (newToken: string | null) => {
     if (newToken) {
-      setCookie("accessToken", newToken, { maxAge: 60 * 60 * 24 * 7 }); // Store for 7 days
+      setCookie("accessToken", newToken); // Let backend control expiry / session cookie
     } else {
       deleteCookie("accessToken");
     }
@@ -42,7 +42,7 @@ export const AuthProvider = ({
   // Function to update user state and cookies
   const setUser = (newUser: string | null) => {
     if (newUser) {
-      setCookie("user", newUser, { maxAge: 60 * 60 * 24 * 7 }); // Store for 7 days
+      setCookie("user", newUser); // Let backend control expiry / session cookie
     } else {
       deleteCookie("user");
     }

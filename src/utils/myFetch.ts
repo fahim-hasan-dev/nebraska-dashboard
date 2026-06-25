@@ -4,6 +4,8 @@
 import { config } from "@/config/env-config";
 import { getToken } from "./get-token";
 import { revalidateTag } from "next/cache";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export interface FetchResponse {
   success: boolean;
@@ -74,6 +76,14 @@ export const myFetch = async (
 
   try {
     const response = await fetch(`${config.baseURL}${url}`, fetchOptions);
+
+    // If unauthorized / token expired, clear cookies and redirect to login
+    if (response.status === 401) {
+      const cookieStore = await cookies();
+      cookieStore.delete("accessToken");
+      cookieStore.delete("user");
+      redirect("/login");
+    }
 
     const data = await response.json();
 
