@@ -5,9 +5,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-import Image from "next/image";
-import logoPng from "@/assets/images/logo.png";
 import Link from "next/link";
+import { HeaderLogo } from "@/components/layout/dashboard/navbar/HeaderLogo";
 
 export default function DashboardLayout({
   children,
@@ -19,14 +18,7 @@ export default function DashboardLayout({
       {/* Edge-to-Edge Top Header */}
       <header className="flex h-[110px] bg-white border-b border-gray-100 items-center justify-between px-6 z-50 shrink-0 w-full shadow-sm">
         <Link href="/" className="flex items-center gap-4">
-          <Image
-            src={logoPng}
-            alt="logo"
-            width={90}
-            height={90}
-            priority
-            className="w-[90px] h-auto object-contain shrink-0"
-          />
+          <HeaderLogo />
           <div className="flex flex-col overflow-hidden">
             <span className="font-bold text-[22px] leading-tight truncate text-gray-900">Nebraska Bush Pullers.</span>
             <span className="text-[14px] text-gray-500 mt-0.5 font-medium">Admin Panel</span>
