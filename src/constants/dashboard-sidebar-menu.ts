@@ -10,6 +10,7 @@ import {
   UserPlus,
   CircleHelp,
   Users,
+  Image,
 } from "lucide-react";
 
 export const sidebarMenu = {
@@ -70,6 +71,11 @@ export const sidebarMenu = {
       title: "FAQ",
       url: "/faq",
       icon: CircleHelp,
+    },
+    {
+      title: "Logo",
+      url: "/logo",
+      icon: Image,
     },
   ],
 
