@@ -9,6 +9,7 @@ import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
 import { getImageUrl } from "@/utils/imageUrl";
 import { getAddressSuggestions, getPlaceCoordinates } from "@/app/actions/mapActions";
+import { fetchImageAsBase64 } from "@/app/actions/imageActions";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,102 @@ interface IEventDetails {
   class?: IClassItem[];
   pictures?: string[];
   isRegistered?: boolean;
+}
+
+const getSafeDisplayDate = (dateStr: string) => {
+  if (!dateStr) return "N/A";
+
+  // Check if dateStr matches YYYY-MM-DD pattern
+  const yyyymmddRegex = /(\d{4})-(\d{2})-(\d{2})/;
+  const match = dateStr.match(yyyymmddRegex);
+
+  if (match) {
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1;
+    const day = parseInt(match[3], 10);
+    const dateObj = new Date(year, month, day);
+    return dateObj.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
+
+  try {
+    const dateObj = new Date(dateStr);
+    if (!isNaN(dateObj.getTime())) {
+      const isUTC = dateStr.includes("T") || dateStr.endsWith("Z");
+      return dateObj.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        ...(isUTC ? { timeZone: "UTC" } : {}),
+      });
+    }
+  } catch {
+    // Ignore and fallback
+  }
+
+  return dateStr;
+};
+
+const getFormattedTime = (timeStr: string) => {
+  if (!timeStr) return "N/A";
+  
+  const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)/;
+  const match = timeStr.match(timeRegex);
+  if (match) {
+    const hour = parseInt(match[1], 10);
+    const minute = match[2];
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour}:${minute} ${ampm} (Central Time)`;
+  }
+  
+  if (!timeStr.toLowerCase().includes("pm") && !timeStr.toLowerCase().includes("am") && !timeStr.toLowerCase().includes("central")) {
+    return `${timeStr} (Central Time)`;
+  }
+  
+  return timeStr;
+};
+
+interface NewImagePreviewProps {
+  file: File;
+  onRemove: () => void;
+}
+
+function NewImagePreview({ file, onRemove }: NewImagePreviewProps) {
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
+
+  if (!previewUrl) return null;
+
+  return (
+    <div className="relative aspect-video rounded-lg border border-gray-205 overflow-hidden group shadow-sm animate-fadeIn">
+      <img
+        src={previewUrl}
+        alt={file.name}
+        className="w-full h-full object-cover"
+      />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-600 text-white rounded-full p-1 transition-colors cursor-pointer"
+        title="Remove image"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+  );
 }
 
 interface EventDetailViewProps {
@@ -171,7 +268,12 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      setEditSelectedFiles((prev) => [...prev, ...filesArray].slice(0, 8));
+      const remainingCapacity = 8 - editExistingPictures.length;
+      if (remainingCapacity <= 0) {
+        toast.error("You have reached the limit of 8 images. Remove existing images to upload new ones.");
+        return;
+      }
+      setEditSelectedFiles((prev) => [...prev, ...filesArray].slice(0, remainingCapacity));
     }
   };
 
@@ -208,6 +310,40 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
 
     try {
       const formData = new FormData();
+      const filesToUpload: File[] = [...editSelectedFiles];
+
+      // If new images are being uploaded, we must also fetch existing pictures server-side
+      // and append them as Files so they are not overwritten by the backend's pictures replacement logic.
+      if (editSelectedFiles.length > 0 && editExistingPictures.length > 0) {
+        toast.loading("Preparing existing images...", { id: "edit-event" });
+        for (let i = 0; i < editExistingPictures.length; i++) {
+          const picUrl = editExistingPictures[i];
+          const absoluteUrl = getImageUrl(picUrl);
+          try {
+            const res = await fetchImageAsBase64(absoluteUrl);
+            if (res) {
+              const byteCharacters = atob(res.base64);
+              const byteNumbers = new Array(byteCharacters.length);
+              for (let j = 0; j < byteCharacters.length; j++) {
+                byteNumbers[j] = byteCharacters.charCodeAt(j);
+              }
+              const byteArray = new Uint8Array(byteNumbers);
+              const blob = new Blob([byteArray], { type: res.contentType });
+              
+              // Extract filename from the URL or generate a default one
+              const urlPath = picUrl.split("?")[0];
+              const filename = urlPath.substring(urlPath.lastIndexOf("/") + 1) || `existing-image-${i}.jpg`;
+              
+              const file = new File([blob], filename, { type: res.contentType });
+              filesToUpload.push(file);
+            }
+          } catch (err) {
+            console.error(`Failed to fetch existing picture at ${absoluteUrl}:`, err);
+          }
+        }
+        toast.loading("Updating event details...", { id: "edit-event" });
+      }
+
       const dataPayload = {
         name: editName,
         date: editDate,
@@ -223,7 +359,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
       };
 
       formData.append("data", JSON.stringify(dataPayload));
-      editSelectedFiles.forEach((file) => {
+      filesToUpload.forEach((file) => {
         formData.append("pictures", file);
       });
 
@@ -274,34 +410,27 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   }
 
   // Format Date for Display
-  const displayDate = event.date
-    ? new Date(event.date).toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "N/A";
+  const displayDate = event.date ? getSafeDisplayDate(event.date) : "N/A";
 
   return (
     <div className="flex flex-col w-full h-full max-w-[1200px] mx-auto p-6 md:p-10 pb-20 md:pb-28">
       {/* Top Navigation */}
-      <div className="flex items-start sm:items-center justify-between gap-6 mb-8 border-b border-gray-100 pb-6 flex-col sm:flex-row">
-        <div className="flex items-center gap-4">
+      <div className="flex items-start sm:items-center justify-between gap-6 mb-8 border-b border-gray-100 pb-6 flex-col sm:flex-row w-full">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
           <button
             onClick={() => router.push("/events")}
-            className="p-2.5 hover:bg-gray-100 rounded-full transition-colors text-gray-600 border border-gray-100 shadow-sm"
+            className="p-2.5 hover:bg-gray-100 rounded-full transition-colors text-gray-600 border border-gray-100 shadow-sm shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="flex flex-col justify-center h-full">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+          <div className="flex flex-col justify-center h-full min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight break-words">
               {event.name}
             </h1>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end shrink-0">
           {/* Event Completed Label */}
           {event.class && event.class.length > 0 && event.class.every((c: IClassItem) => c.status === "completed") && (
             <span className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg font-bold text-sm shadow-sm select-none">
@@ -448,16 +577,17 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                 />
               </div>
 
-              {/* Existing Pictures Previews */}
-              {editExistingPictures.length > 0 && (
+              {/* Tractor Pictures Previews */}
+              {(editExistingPictures.length > 0 || editSelectedFiles.length > 0) && (
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-gray-700">
-                    Existing Tractor Pictures ({editExistingPictures.length})
+                    Tractor Pictures ({editExistingPictures.length + editSelectedFiles.length})
                   </label>
                   <div className="grid grid-cols-4 gap-2">
+                    {/* Existing Images */}
                     {editExistingPictures.map((pic, idx) => (
                       <div
-                        key={idx}
+                        key={`existing-${idx}`}
                         className="relative aspect-video rounded-lg border border-gray-200 overflow-hidden group shadow-sm animate-fadeIn"
                       >
                         <img
@@ -475,6 +605,14 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                         </button>
                       </div>
                     ))}
+                    {/* New Selected Images */}
+                    {editSelectedFiles.map((file, idx) => (
+                      <NewImagePreview
+                        key={`new-${idx}`}
+                        file={file}
+                        onRemove={() => removeEditFile(idx)}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
@@ -482,7 +620,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
               {/* Picture Upload */}
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-gray-700">
-                  Add Tractor Pictures (Max 8)
+                  Add Tractor Pictures (Max {Math.max(0, 8 - editExistingPictures.length)})
                 </label>
                 <input
                   type="file"
@@ -491,40 +629,28 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                   multiple
                   accept="image/*"
                   className="hidden"
+                  disabled={8 - editExistingPictures.length <= 0}
                 />
                 <div
-                  onClick={() => editFileInputRef.current?.click()}
-                  className="border-2 border-dashed border-gray-200 rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => {
+                    if (8 - editExistingPictures.length <= 0) {
+                      toast.error("You have reached the limit of 8 images. Remove existing images to upload new ones.");
+                      return;
+                    }
+                    editFileInputRef.current?.click();
+                  }}
+                  className={`border-2 border-dashed border-gray-200 rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition-colors ${
+                    8 - editExistingPictures.length <= 0 ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
                   <UploadCloud className="h-8 w-8 text-gray-400 mb-2" />
                   <p className="text-sm font-semibold text-gray-600">
-                    Click to upload images
+                    {8 - editExistingPictures.length <= 0 ? "Maximum limit reached" : "Click to upload images"}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {editSelectedFiles.length} / 8 new images selected
+                    {editSelectedFiles.length} / {Math.max(0, 8 - editExistingPictures.length)} new images selected
                   </p>
                 </div>
-
-                {/* Previews */}
-                {editSelectedFiles.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {editSelectedFiles.map((file, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-md pl-3 pr-2 py-1 text-xs text-gray-600 animate-fadeIn"
-                      >
-                        <span className="truncate max-w-[120px]">{file.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeEditFile(idx)}
-                          className="text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Modal Actions */}
@@ -556,6 +682,15 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
         {/* Info Column */}
         <div className="lg:col-span-2 flex flex-col gap-6">
+          {/* Additional Information */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">
+              Additional Information
+            </h3>
+            <p className="text-gray-700 text-[15px] leading-relaxed whitespace-pre-line font-medium">
+              {event.additionalInfo || "No details provided."}
+            </p>
+          </div>
 
           {/* Picture Gallery */}
           {event.pictures && event.pictures.length > 0 && (
@@ -603,7 +738,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
               </div>
               <div className="flex flex-col justify-center">
                 <span className="text-[13px] text-gray-500 font-medium uppercase tracking-wide">Time</span>
-                <span className="text-[15px] font-bold text-gray-900 mt-0.5">{event.time || "N/A"}</span>
+                <span className="text-[15px] font-bold text-gray-900 mt-0.5">{getFormattedTime(event.time)}</span>
               </div>
             </div>
 

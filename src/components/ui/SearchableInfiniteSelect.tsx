@@ -63,10 +63,10 @@ export default function SearchableInfiniteSelect({
         });
 
         if (res.success && res.data) {
-          let rawData = Array.isArray(res.data) 
-            ? res.data 
+          let rawData = Array.isArray(res.data)
+            ? res.data
             : (res.data.data || res.data.users || res.data.events || []);
-          
+
           if (transformData) {
             rawData = transformData(rawData);
           }
@@ -201,15 +201,15 @@ export default function SearchableInfiniteSelect({
   }, []);
 
   return (
-    <div ref={containerRef} className={`relative w-full ${className}`}>
+    <div ref={containerRef} className={`relative w-full min-w-0 ${className}`}>
       {/* Trigger element button */}
       <button
         type="button"
         disabled={disabled}
         onClick={toggleDropdown}
-        className="flex h-12 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed text-left transition-all"
+        className="flex h-12 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed text-left transition-all min-w-0 overflow-hidden"
       >
-        <span className="truncate">
+        <span className="truncate flex-1 w-0 text-left">
           {selectedItem ? displayValue(selectedItem) : placeholder}
         </span>
         <ChevronDown className="h-4 w-4 text-gray-400 shrink-0 ml-2" />
@@ -256,11 +256,10 @@ export default function SearchableInfiniteSelect({
                       onChange(id, item);
                       setIsOpen(false);
                     }}
-                    className={`flex w-full items-center px-4 py-2.5 text-sm text-left hover:bg-gray-50 active:bg-gray-100 transition-colors font-medium ${
-                      isSelected ? "bg-blue-50/40 text-blue-600 font-semibold" : "text-gray-700"
-                    }`}
+                    className={`flex w-full items-center px-4 py-2.5 text-sm text-left hover:bg-gray-50 active:bg-gray-100 transition-colors font-medium min-w-0 overflow-hidden ${isSelected ? "bg-blue-50/40 text-blue-600 font-semibold" : "text-gray-700"
+                      }`}
                   >
-                    <span className="truncate">{displayValue(item)}</span>
+                    <span className="truncate flex-1 w-0 text-left">{displayValue(item)}</span>
                   </button>
                 );
               });

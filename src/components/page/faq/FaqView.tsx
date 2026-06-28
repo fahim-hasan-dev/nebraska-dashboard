@@ -272,16 +272,6 @@ export default function FaqView({ faqs }: FaqViewProps) {
           </Dialog>
         </div>
 
-        {/* Info Banner when showing mock data */}
-        {!hasDbData && !isLoading && (
-          <div className="mb-6 bg-blue-50/50 border border-blue-200/60 rounded-lg p-4 flex gap-3 items-start">
-            <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-700">
-              <span className="font-semibold text-blue-800">Demo Mode:</span> Showing static mock FAQs. Adding new FAQs will store them permanently in the database.
-            </div>
-          </div>
-        )}
-
         {/* FAQ List */}
         <div className="space-y-4 min-h-[200px] flex flex-col justify-center">
           {isLoading ? (

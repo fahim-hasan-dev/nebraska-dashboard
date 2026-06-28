@@ -252,8 +252,8 @@ export default function ResultsView({}: ResultsViewProps) {
               Add New Result
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl bg-white shadow-xl">
-            <div className="p-8">
+          <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl bg-white shadow-xl overflow-hidden">
+            <div className="p-8 w-full max-w-full">
               <DialogHeader className="mb-6">
                 <DialogTitle className="text-2xl font-bold text-center text-gray-800 flex items-center justify-center gap-2">
                   <Trophy className="w-6 h-6 text-yellow-500 animate-bounce" />
@@ -552,8 +552,8 @@ export default function ResultsView({}: ResultsViewProps) {
 
       {/* Edit Result Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl bg-white shadow-xl">
-          <div className="p-8">
+        <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl bg-white shadow-xl overflow-hidden">
+          <div className="p-8 w-full max-w-full">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-2xl font-bold text-center text-gray-800 flex items-center justify-center gap-2">
                 <Trophy className="w-6 h-6 text-yellow-500 animate-bounce" />

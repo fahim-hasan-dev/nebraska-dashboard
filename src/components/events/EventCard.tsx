@@ -47,7 +47,7 @@ export function EventCard({
             <span className="font-semibold text-gray-700">Entry Fee: ${entryFee || 0}</span>
           </div>
         </div>
-        <p className="text-sm text-gray-500">{description}</p>
+        <p className="text-sm text-gray-500 line-clamp-2">{description}</p>
       </div>
       <div className="border-t border-gray-100" />
       <div className="p-4 px-6 flex justify-between items-center bg-white">

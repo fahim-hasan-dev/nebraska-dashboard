@@ -162,14 +162,6 @@ export default function LegalView() {
         </div>
 
         <div className="p-6 flex flex-col gap-6">
-          {/* Tip Banner */}
-          <div className="bg-[#fffdf5] border border-amber-200/60 rounded-md p-3 flex gap-2 items-start">
-            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-[13px] text-amber-700">
-              <span className="font-semibold text-amber-800">Tip:</span> Edit content using the Rich Text WYSIWYG editor below. Content is automatically saved as HTML.
-            </p>
-          </div>
-
           {/* Editor Container */}
           <div className="min-h-[400px] border border-gray-100 rounded-lg overflow-hidden bg-gray-50/10">
             {isLoading ? (
