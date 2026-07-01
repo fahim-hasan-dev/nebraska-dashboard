@@ -7,6 +7,16 @@ import { revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+const isRedirectError = (err: any): boolean => {
+  return (
+    err &&
+    typeof err === "object" &&
+    "digest" in err &&
+    typeof err.digest === "string" &&
+    err.digest.startsWith("NEXT_REDIRECT")
+  );
+};
+
 export interface FetchResponse {
   success: boolean;
   message?: string;
@@ -77,8 +87,8 @@ export const myFetch = async (
   try {
     const response = await fetch(`${config.baseURL}${url}`, fetchOptions);
 
-    // If unauthorized / token expired, clear cookies and redirect to login
-    if (response.status === 401) {
+    // If unauthorized / token expired, clear cookies and redirect to login (except login/auth requests)
+    if (response.status === 401 && !url.includes("/auth/admin-login") && !url.includes("/auth/login")) {
       const cookieStore = await cookies();
       cookieStore.delete("accessToken");
       cookieStore.delete("user");
@@ -114,6 +124,9 @@ export const myFetch = async (
       error: data?.errorMessages || "Request failed",
     };
   } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
     return {
       success: false,
       data: null,

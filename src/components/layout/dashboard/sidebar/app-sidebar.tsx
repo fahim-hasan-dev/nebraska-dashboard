@@ -29,12 +29,32 @@ import { LogOut } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { logout } = useAuthContext();
+  const { logout, user } = useAuthContext();
+
+  const userRole = React.useMemo(() => {
+    try {
+      if (!user) return "";
+      const parsed = typeof user === "string" ? JSON.parse(user) : user;
+      return parsed?.role || "";
+    } catch {
+      return "";
+    }
+  }, [user]);
+
+  const filteredNavMain = React.useMemo(() => {
+    return sidebarMenu.navMain.filter((item) => {
+      if (item.url === "/admins") {
+        return userRole === "super-admin" || userRole === "super_admin" || userRole === "SUPER_ADMIN";
+      }
+      return true;
+    });
+  }, [userRole]);
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
 
       <SidebarContent>
-        <NavMain items={sidebarMenu.navMain} />
+        <NavMain items={filteredNavMain} />
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>

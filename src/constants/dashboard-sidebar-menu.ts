@@ -77,6 +77,11 @@ export const sidebarMenu = {
       url: "/logo",
       icon: Image,
     },
+    {
+      title: "Admins",
+      url: "/admins",
+      icon: Users,
+    },
   ],
 
 };

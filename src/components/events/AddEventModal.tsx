@@ -127,13 +127,6 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
       return;
     }
 
-    // Validate past date and time
-    const selectedDateTime = new Date(`${date}T${time}`);
-    if (selectedDateTime < new Date()) {
-      toast.error("Event date and time cannot be in the past");
-      return;
-    }
-
     if (!coordinates) {
       toast.error("Please select a valid venue location from the address suggestions");
       return;
@@ -249,7 +242,6 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
               <input
                 type="date"
                 value={date}
-                min={new Date().toISOString().split("T")[0]}
                 onChange={(e) => setDate(e.target.value)}
                 className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required

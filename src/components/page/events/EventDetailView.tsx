@@ -287,13 +287,6 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
       return;
     }
 
-    // Validate past date and time
-    const selectedDateTime = new Date(`${editDate}T${editTime}`);
-    if (selectedDateTime < new Date()) {
-      toast.error("Event date and time cannot be in the past");
-      return;
-    }
-
     // Enforce geocoded address selection
     if (!editCoordinates) {
       toast.error("Please select a valid venue location from the address suggestions");
@@ -483,7 +476,6 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                   <input
                     type="date"
                     value={editDate}
-                    min={new Date().toISOString().split("T")[0]}
                     onChange={(e) => setEditDate(e.target.value)}
                     className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     required
