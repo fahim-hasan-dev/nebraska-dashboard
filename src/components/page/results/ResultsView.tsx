@@ -32,6 +32,7 @@ export default function ResultsView({}: ResultsViewProps) {
   const [modalClassName, setModalClassName] = useState<string>("");
   const [modalDriverId, setModalDriverId] = useState<string>("");
   const [modalDistance, setModalDistance] = useState<string>("");
+  const [modalPoint, setModalPoint] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit Modal form states
@@ -43,6 +44,7 @@ export default function ResultsView({}: ResultsViewProps) {
   const [editDriverId, setEditDriverId] = useState<string>("");
   const [editDriverName, setEditDriverName] = useState<string>("");
   const [editDistance, setEditDistance] = useState<string>("");
+  const [editPoint, setEditPoint] = useState<string>("");
   const [isEditingSubmitting, setIsEditingSubmitting] = useState(false);
 
   // Fetch results when Event and Class filters are chosen
@@ -97,6 +99,10 @@ export default function ResultsView({}: ResultsViewProps) {
       toast.error("Please enter a valid positive distance");
       return;
     }
+    if (!modalPoint || isNaN(Number(modalPoint)) || Number(modalPoint) < 0) {
+      toast.error("Please enter a valid points value");
+      return;
+    }
 
     setIsSubmitting(true);
     toast.loading("Recording result...", { id: "result-action" });
@@ -109,6 +115,7 @@ export default function ResultsView({}: ResultsViewProps) {
           class: modalClassName,
           driver: modalDriverId,
           distance: Number(modalDistance),
+          point: Number(modalPoint),
         },
       });
 
@@ -121,6 +128,7 @@ export default function ResultsView({}: ResultsViewProps) {
         setModalClassName("");
         setModalDriverId("");
         setModalDistance("");
+        setModalPoint("");
         setIsAddModalOpen(false);
 
         // If newly added result matches current filters, reload results
@@ -155,6 +163,7 @@ export default function ResultsView({}: ResultsViewProps) {
         : "Unknown Driver"
     );
     setEditDistance(String(result.distance || ""));
+    setEditPoint(String(result.point ?? ""));
     setIsEditModalOpen(true);
   };
 
@@ -175,6 +184,10 @@ export default function ResultsView({}: ResultsViewProps) {
       toast.error("Please enter a valid positive distance");
       return;
     }
+    if (!editPoint || isNaN(Number(editPoint)) || Number(editPoint) < 0) {
+      toast.error("Please enter a valid points value");
+      return;
+    }
 
     setIsEditingSubmitting(true);
     toast.loading("Updating result...", { id: "result-action" });
@@ -187,6 +200,7 @@ export default function ResultsView({}: ResultsViewProps) {
           class: editClassName,
           driver: editDriverId,
           distance: Number(editDistance),
+          point: Number(editPoint),
         },
       });
 
@@ -357,6 +371,19 @@ export default function ResultsView({}: ResultsViewProps) {
                   />
                 </div>
 
+                {/* Points in Modal */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="modalPoint" className="text-gray-600 font-medium">Points</Label>
+                  <Input
+                    id="modalPoint"
+                    type="number"
+                    value={modalPoint}
+                    onChange={(e) => setModalPoint(e.target.value)}
+                    placeholder="e.g., 50"
+                    className="h-12 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
+                  />
+                </div>
+
                 <Button
                   onClick={handleAddResult}
                   disabled={isSubmitting}
@@ -450,7 +477,7 @@ export default function ResultsView({}: ResultsViewProps) {
         ) : (
           /* Results Table Display */
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
-            <div className="px-6 py-4.5 bg-gray-50/50 border-b border-gray-150 flex items-center justify-between">
+            <div className="px-6 py-5 bg-gray-50/50 border-b border-gray-150 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <Trophy className="w-5 h-5 text-yellow-500" />
                 <span className="text-sm font-bold text-gray-800 uppercase tracking-wider">
@@ -470,6 +497,7 @@ export default function ResultsView({}: ResultsViewProps) {
                     <th className="px-6 py-4">Driver Name</th>
                     <th className="px-6 py-4">Vehicle/Tractor Name</th>
                     <th className="px-6 py-4">Distance (ft)</th>
+                    <th className="px-6 py-4">Points</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -514,6 +542,9 @@ export default function ResultsView({}: ResultsViewProps) {
                         </td>
                         <td className="px-6 py-4 font-extrabold text-blue-600 text-base">
                           {row.distance.toFixed(2)} ft
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-gray-700">
+                          {row.point ?? 0} pts
                         </td>
                         <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                           <button
@@ -629,6 +660,19 @@ export default function ResultsView({}: ResultsViewProps) {
                   value={editDistance}
                   onChange={(e) => setEditDistance(e.target.value)}
                   placeholder="e.g., 250.50"
+                  className="h-12 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
+                />
+              </div>
+
+              {/* Points */}
+              <div className="space-y-1.5">
+                <Label htmlFor="editPoint" className="text-gray-600 font-medium">Points</Label>
+                <Input
+                  id="editPoint"
+                  type="number"
+                  value={editPoint}
+                  onChange={(e) => setEditPoint(e.target.value)}
+                  placeholder="e.g., 50"
                   className="h-12 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
                 />
               </div>
