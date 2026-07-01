@@ -24,7 +24,6 @@ interface AddSponsorModalProps {
 export function AddSponsorModal({ children, sponsor, onSuccess }: AddSponsorModalProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [type, setType] = useState<"platinum" | "gold" | "silver">("platinum");
   const [isActive, setIsActive] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -36,7 +35,6 @@ export function AddSponsorModal({ children, sponsor, onSuccess }: AddSponsorModa
   useEffect(() => {
     if (open) {
       setName(sponsor?.name || "");
-      setType(sponsor?.type || "platinum");
       setIsActive(sponsor ? sponsor.isActive : true);
       setSelectedFile(null);
       setPreviewUrl(sponsor?.image || null);
@@ -98,7 +96,6 @@ export function AddSponsorModal({ children, sponsor, onSuccess }: AddSponsorModa
       const formData = new FormData();
       const dataPayload = {
         name: name.trim(),
-        type,
         isActive,
       };
 
@@ -163,22 +160,6 @@ export function AddSponsorModal({ children, sponsor, onSuccess }: AddSponsorModa
             />
           </div>
 
-          {/* Sponsor Tier */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              Sponsor Tier *
-            </label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as "platinum" | "gold" | "silver")}
-              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-800 font-semibold cursor-pointer"
-              disabled={isLoading}
-            >
-              <option value="platinum">Platinum</option>
-              <option value="gold">Gold</option>
-              <option value="silver">Silver</option>
-            </select>
-          </div>
 
           {/* Logo Upload Section */}
           <div className="flex flex-col gap-2">
@@ -287,15 +268,17 @@ export function AddSponsorModal({ children, sponsor, onSuccess }: AddSponsorModa
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-end gap-3 mt-2">
             <button
+              type="button"
               onClick={() => setOpen(false)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors w-full sm:w-[120px]"
+              className="h-10 px-6 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-semibold text-sm transition-colors w-full sm:w-auto cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 flex items-center justify-center shadow-sm"
               disabled={isLoading}
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleSubmit}
-              className="px-6 py-2 bg-[#3b82f6] text-white rounded-md font-medium text-sm hover:bg-blue-600 transition-colors w-full sm:w-[120px] flex items-center justify-center"
+              className="h-10 px-6 bg-[#3b82f6] hover:bg-blue-600 disabled:bg-blue-400 text-white rounded-lg font-semibold text-sm transition-colors w-full sm:w-auto flex items-center justify-center cursor-pointer disabled:cursor-not-allowed shadow-sm"
               disabled={isLoading}
             >
               {isLoading ? "Saving..." : sponsor ? "Save" : "Add Sponsor"}
