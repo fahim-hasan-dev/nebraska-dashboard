@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { getImageUrl } from "@/utils/imageUrl";
 import { getAddressSuggestions, getPlaceCoordinates } from "@/app/actions/mapActions";
 import { fetchImageAsBase64 } from "@/app/actions/imageActions";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import {
   Dialog,
   DialogContent,
@@ -26,77 +27,53 @@ interface IClassItem {
 interface IEventDetails {
   _id: string;
   name: string;
-  date: string;
-  time: string;
+  startDate: string;
+  endDate: string;
   venue: string;
   location?: {
     type: "Point";
     coordinates: [number, number];
   };
-  entryFee: number;
+  oneTimeHookFee: number;
   additionalInfo?: string;
   class?: IClassItem[];
   pictures?: string[];
   isRegistered?: boolean;
 }
 
-const getSafeDisplayDate = (dateStr: string) => {
+const getSafeDisplayDateTime = (dateStr: string) => {
   if (!dateStr) return "N/A";
-
-  // Check if dateStr matches YYYY-MM-DD pattern
-  const yyyymmddRegex = /(\d{4})-(\d{2})-(\d{2})/;
-  const match = dateStr.match(yyyymmddRegex);
-
-  if (match) {
-    const year = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10) - 1;
-    const day = parseInt(match[3], 10);
-    const dateObj = new Date(year, month, day);
-    return dateObj.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
-
   try {
     const dateObj = new Date(dateStr);
     if (!isNaN(dateObj.getTime())) {
-      const isUTC = dateStr.includes("T") || dateStr.endsWith("Z");
       return dateObj.toLocaleDateString("en-US", {
         weekday: "long",
         year: "numeric",
         month: "long",
         day: "numeric",
-        ...(isUTC ? { timeZone: "UTC" } : {}),
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
       });
     }
   } catch {
     // Ignore and fallback
   }
-
   return dateStr;
 };
 
-const getFormattedTime = (timeStr: string) => {
-  if (!timeStr) return "N/A";
+const formatToDatetimeLocal = (dateStr: string) => {
+  if (!dateStr) return "";
+  const dateObj = new Date(dateStr);
+  if (isNaN(dateObj.getTime())) return "";
   
-  const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)/;
-  const match = timeStr.match(timeRegex);
-  if (match) {
-    const hour = parseInt(match[1], 10);
-    const minute = match[2];
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const formattedHour = hour % 12 || 12;
-    return `${formattedHour}:${minute} ${ampm} (Central Time)`;
-  }
+  const yyyy = dateObj.getFullYear();
+  const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const dd = String(dateObj.getDate()).padStart(2, '0');
+  const hh = String(dateObj.getHours()).padStart(2, '0');
+  const min = String(dateObj.getMinutes()).padStart(2, '0');
   
-  if (!timeStr.toLowerCase().includes("pm") && !timeStr.toLowerCase().includes("am") && !timeStr.toLowerCase().includes("central")) {
-    return `${timeStr} (Central Time)`;
-  }
-  
-  return timeStr;
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 };
 
 interface NewImagePreviewProps {
@@ -150,10 +127,10 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [editName, setEditName] = useState("");
-  const [editDate, setEditDate] = useState("");
-  const [editTime, setEditTime] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
   const [editVenue, setEditVenue] = useState("");
-  const [editEntryFee, setEditEntryFee] = useState("");
+  const [editOneTimeHookFee, setEditOneTimeHookFee] = useState("");
   const [editAdditionalInfo, setEditAdditionalInfo] = useState("");
   const [editSelectedFiles, setEditSelectedFiles] = useState<File[]>([]);
   const [editExistingPictures, setEditExistingPictures] = useState<string[]>([]);
@@ -222,18 +199,10 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
         
         // Initialize Edit Fields
         setEditName(response.data.name || "");
-        if (response.data.date) {
-          const dateObj = new Date(response.data.date);
-          const yyyy = dateObj.getFullYear();
-          const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-          const dd = String(dateObj.getDate()).padStart(2, '0');
-          setEditDate(`${yyyy}-${mm}-${dd}`);
-        } else {
-          setEditDate("");
-        }
-        setEditTime(response.data.time || "");
+        setEditStartDate(formatToDatetimeLocal(response.data.startDate));
+        setEditEndDate(formatToDatetimeLocal(response.data.endDate));
         setEditVenue(response.data.venue || "");
-        setEditEntryFee(String(response.data.entryFee || ""));
+        setEditOneTimeHookFee(String(response.data.oneTimeHookFee || ""));
         setEditAdditionalInfo(response.data.additionalInfo || "");
         setEditExistingPictures(response.data.pictures || []);
 
@@ -282,7 +251,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   };
 
   const handleEditSubmit = async () => {
-    if (!editName || !editDate || !editTime || !editVenue || !editEntryFee) {
+    if (!editName || !editStartDate || !editEndDate || !editVenue || !editOneTimeHookFee) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -293,8 +262,8 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
       return;
     }
 
-    if (isNaN(Number(editEntryFee)) || Number(editEntryFee) <= 0) {
-      toast.error("Please enter a valid positive entry fee");
+    if (isNaN(Number(editOneTimeHookFee)) || Number(editOneTimeHookFee) <= 0) {
+      toast.error("Please enter a valid positive one time hook fee");
       return;
     }
 
@@ -339,14 +308,14 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
 
       const dataPayload = {
         name: editName,
-        date: editDate,
-        time: editTime,
+        startDate: new Date(editStartDate).toISOString(),
+        endDate: new Date(editEndDate).toISOString(),
         venue: editVenue,
         location: {
           type: "Point",
           coordinates: [editCoordinates.lng, editCoordinates.lat], // [longitude, latitude]
         },
-        entryFee: Number(editEntryFee),
+        oneTimeHookFee: Number(editOneTimeHookFee),
         additionalInfo: editAdditionalInfo,
         pictures: editExistingPictures,
       };
@@ -403,7 +372,8 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   }
 
   // Format Date for Display
-  const displayDate = event.date ? getSafeDisplayDate(event.date) : "N/A";
+  const displayStartDate = event.startDate ? getSafeDisplayDateTime(event.startDate) : "N/A";
+  const displayEndDate = event.endDate ? getSafeDisplayDateTime(event.endDate) : "N/A";
 
   return (
     <div className="flex flex-col w-full h-full max-w-[1200px] mx-auto p-6 md:p-10 pb-20 md:pb-28">
@@ -467,35 +437,31 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                 />
               </div>
 
-              {/* Date & Time */}
+              {/* Start & End Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-gray-700">
-                    Date *
+                    Start Date & Time *
                   </label>
-                  <input
-                    type="date"
-                    value={editDate}
-                    onChange={(e) => setEditDate(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    required
+                  <DateTimePicker
+                    value={editStartDate}
+                    onChange={setEditStartDate}
+                    placeholder="Select start date & time"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-gray-700">
-                    Time *
+                    End Date & Time *
                   </label>
-                  <input
-                    type="time"
-                    value={editTime}
-                    onChange={(e) => setEditTime(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    required
+                  <DateTimePicker
+                    value={editEndDate}
+                    onChange={setEditEndDate}
+                    placeholder="Select end date & time"
                   />
                 </div>
               </div>
 
-              {/* Venue & Entry Fee */}
+              {/* Venue & Hook Fee */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2 relative" ref={editSuggestionsRef}>
                   <label className="text-sm font-medium text-gray-700">
@@ -543,30 +509,17 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-gray-700">
-                    Entry Fee ($) *
+                    One Time Hook Fee ($) *
                   </label>
                   <input
                     type="number"
-                    value={editEntryFee}
-                    onChange={(e) => setEditEntryFee(e.target.value)}
+                    value={editOneTimeHookFee}
+                    onChange={(e) => setEditOneTimeHookFee(e.target.value)}
                     placeholder="e.g., 50"
                     className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     required
                   />
                 </div>
-              </div>
-
-              {/* Additional Info */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Additional Information
-                </label>
-                <textarea
-                  value={editAdditionalInfo}
-                  onChange={(e) => setEditAdditionalInfo(e.target.value)}
-                  placeholder="Any additional details about the event..."
-                  className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-                />
               </div>
 
               {/* Tractor Pictures Previews */}
@@ -645,6 +598,19 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                 </div>
               </div>
 
+              {/* Additional Info */}
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Additional Information
+                </label>
+                <textarea
+                  value={editAdditionalInfo}
+                  onChange={(e) => setEditAdditionalInfo(e.target.value)}
+                  placeholder="Any additional details about the event..."
+                  className="flex min-h-[140px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y"
+                />
+              </div>
+
               {/* Modal Actions */}
               <div className="flex justify-between items-center mt-2 gap-4">
                 <button
@@ -719,18 +685,18 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                 <Calendar className="w-5 h-5 text-blue-600" />
               </div>
               <div className="flex flex-col justify-center">
-                <span className="text-[13px] text-gray-500 font-medium uppercase tracking-wide">Date</span>
-                <span className="text-[15px] font-bold text-gray-900 mt-0.5">{displayDate}</span>
+                <span className="text-[13px] text-gray-500 font-medium uppercase tracking-wide">Start Date & Time</span>
+                <span className="text-[15px] font-bold text-gray-900 mt-0.5">{displayStartDate}</span>
               </div>
             </div>
             
             <div className="flex items-start gap-4">
               <div className="p-2.5 bg-blue-50 border border-blue-100/50 rounded-xl shadow-sm">
-                <Clock className="w-5 h-5 text-blue-600" />
+                <Calendar className="w-5 h-5 text-blue-600" />
               </div>
               <div className="flex flex-col justify-center">
-                <span className="text-[13px] text-gray-500 font-medium uppercase tracking-wide">Time</span>
-                <span className="text-[15px] font-bold text-gray-900 mt-0.5">{getFormattedTime(event.time)}</span>
+                <span className="text-[13px] text-gray-500 font-medium uppercase tracking-wide">End Date & Time</span>
+                <span className="text-[15px] font-bold text-gray-900 mt-0.5">{displayEndDate}</span>
               </div>
             </div>
 
@@ -749,8 +715,8 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
                 <DollarSign className="w-5 h-5 text-emerald-600" />
               </div>
               <div className="flex flex-col justify-center">
-                <span className="text-[13px] text-gray-500 font-medium uppercase tracking-wide">Entry Fee</span>
-                <span className="text-[15px] font-bold text-gray-900 mt-0.5">${event.entryFee || 0}</span>
+                <span className="text-[13px] text-gray-500 font-medium uppercase tracking-wide">One Time Hook Fee</span>
+                <span className="text-[15px] font-bold text-gray-900 mt-0.5">${event.oneTimeHookFee || 0}</span>
               </div>
             </div>
           </div>

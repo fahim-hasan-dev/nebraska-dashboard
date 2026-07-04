@@ -8,73 +8,35 @@ import { Plus, Search, Loader2 } from "lucide-react";
 import { myFetch } from "@/utils/myFetch";
 import { CustomPagination } from "@/components/ui/custom-pagination";
 
-// Helper to safely format a date and time to US Central Time
-const formatEventDate = (dateStr: string, timeStr?: string) => {
-  if (!dateStr) return "";
-
-  let formattedDate = "";
-  // Check if dateStr is in YYYY-MM-DD or contains it
-  const yyyymmddRegex = /(\d{4})-(\d{2})-(\d{2})/;
-  const match = dateStr.match(yyyymmddRegex);
-
-  if (match) {
-    const year = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10) - 1;
-    const day = parseInt(match[3], 10);
-    const dateObj = new Date(year, month, day);
-    formattedDate = dateObj.toLocaleDateString("en-US", {
-      month: "long",
+// Helper to safely format a date-time range
+const formatEventDateRange = (startDateStr: string, endDateStr: string) => {
+  if (!startDateStr) return "";
+  try {
+    const start = new Date(startDateStr);
+    if (isNaN(start.getTime())) return "";
+    
+    const startFormatted = start.toLocaleDateString("en-US", {
+      month: "short",
       day: "numeric",
       year: "numeric",
     });
-  } else {
-    try {
-      const dateObj = new Date(dateStr);
-      if (!isNaN(dateObj.getTime())) {
-        const isUTC = dateStr.includes("T") || dateStr.endsWith("Z");
-        if (isUTC) {
-          formattedDate = dateObj.toLocaleDateString("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-            timeZone: "UTC",
-          });
-        } else {
-          formattedDate = dateObj.toLocaleDateString("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          });
-        }
-      } else {
-        formattedDate = dateStr;
-      }
-    } catch {
-      formattedDate = dateStr;
-    }
+    
+    if (!endDateStr) return startFormatted;
+    
+    const end = new Date(endDateStr);
+    if (isNaN(end.getTime())) return startFormatted;
+    
+    const endFormatted = end.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    
+    if (startFormatted === endFormatted) return startFormatted;
+    return `${startFormatted} - ${endFormatted}`;
+  } catch {
+    return "";
   }
-
-  if (timeStr) {
-    const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)/;
-    const timeMatch = timeStr.match(timeRegex);
-    if (timeMatch) {
-      const hour = parseInt(timeMatch[1], 10);
-      const minute = timeMatch[2];
-      const ampm = hour >= 12 ? "PM" : "AM";
-      const formattedHour = hour % 12 || 12;
-      return `${formattedDate} at ${formattedHour}:${minute} ${ampm} (Central Time)`;
-    }
-    if (!formattedDate.includes("PM") && !formattedDate.includes("AM") && !timeStr.toLowerCase().includes("central")) {
-      return `${formattedDate} at ${timeStr} (Central Time)`;
-    }
-    return `${formattedDate} at ${timeStr}`;
-  }
-
-  if ((formattedDate.includes("PM") || formattedDate.includes("AM")) && !formattedDate.toLowerCase().includes("central")) {
-    return `${formattedDate} (Central Time)`;
-  }
-
-  return formattedDate;
 };
 
 interface EventsViewProps {
@@ -167,7 +129,7 @@ export default function EventsView({ initialEvents, initialPagination }: EventsV
   // Format events to fit EventCard component props
   const formattedEvents = sourceList.map((event: any) => {
     // Extract date and time safely and format as Central Time
-    const displayDate = formatEventDate(event.date, event.time);
+    const displayDate = formatEventDateRange(event.startDate, event.endDate);
 
     // Extract tags from the class list objects
     const tags = event.class?.map((c: any) => c.name) || [];
@@ -179,7 +141,7 @@ export default function EventsView({ initialEvents, initialPagination }: EventsV
       location: event.venue || "TBD Location",
       description: event.additionalInfo || "No details provided.",
       tags: tags.length > 0 ? tags : ["Standard"],
-      entryFee: event.entryFee || 0,
+      oneTimeHookFee: event.oneTimeHookFee || 0,
     };
   });
 
@@ -235,7 +197,7 @@ export default function EventsView({ initialEvents, initialPagination }: EventsV
                 location={event.location}
                 description={event.description}
                 tags={event.tags}
-                entryFee={event.entryFee}
+                oneTimeHookFee={event.oneTimeHookFee}
               />
             ))}
           </div>

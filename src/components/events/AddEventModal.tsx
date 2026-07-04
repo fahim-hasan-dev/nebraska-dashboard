@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 
 interface AddEventModalProps {
   children: React.ReactNode;
@@ -25,10 +26,10 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
 
   // Form states
   const [name, setName] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [venue, setVenue] = useState("");
-  const [entryFee, setEntryFee] = useState("");
+  const [oneTimeHookFee, setOneTimeHookFee] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [classes, setClasses] = useState<string[]>([""]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -122,7 +123,7 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
   // Submit the form
   const handleSubmit = async () => {
     // Validation
-    if (!name || !date || !time || !venue || !entryFee) {
+    if (!name || !startDate || !endDate || !venue || !oneTimeHookFee) {
       toast.error("Please fill in all required fields marked with *");
       return;
     }
@@ -132,8 +133,8 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
       return;
     }
 
-    if (isNaN(Number(entryFee)) || Number(entryFee) <= 0) {
-      toast.error("Please enter a valid positive entry fee");
+    if (isNaN(Number(oneTimeHookFee)) || Number(oneTimeHookFee) <= 0) {
+      toast.error("Please enter a valid positive one time hook fee");
       return;
     }
 
@@ -152,14 +153,14 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
       // Create the JSON payload that matches createEventZodSchema validation
       const dataPayload = {
         name,
-        date,
-        time,
+        startDate: new Date(startDate).toISOString(),
+        endDate: new Date(endDate).toISOString(),
         venue,
         location: {
           type: "Point",
           coordinates: [coordinates.lng, coordinates.lat], // [longitude, latitude]
         },
-        entryFee: Number(entryFee),
+        oneTimeHookFee: Number(oneTimeHookFee),
         additionalInfo,
         class: activeClasses.map((className) => ({
           name: className,
@@ -185,11 +186,11 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
         setOpen(false);
         // Reset states
         setName("");
-        setDate("");
-        setTime("");
+        setStartDate("");
+        setEndDate("");
         setVenue("");
         setCoordinates(null);
-        setEntryFee("");
+        setOneTimeHookFee("");
         setAdditionalInfo("");
         setClasses([""]);
         setSelectedFiles([]);
@@ -233,35 +234,31 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
             />
           </div>
 
-          {/* Date & Time */}
+          {/* Start & End Date */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-gray-700">
-                Date *
+                Start Date & Time *
               </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                required
+              <DateTimePicker
+                value={startDate}
+                onChange={setStartDate}
+                placeholder="Select start date & time"
               />
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-gray-700">
-                Time *
+                End Date & Time *
               </label>
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                required
+              <DateTimePicker
+                value={endDate}
+                onChange={setEndDate}
+                placeholder="Select end date & time"
               />
             </div>
           </div>
 
-          {/* Venue & Entry Fee */}
+          {/* Venue & Hook Fee */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2 relative" ref={suggestionsRef}>
               <label className="text-sm font-medium text-gray-700">
@@ -309,12 +306,12 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-gray-700">
-                Entry Fee ($) *
+                One Time Hook Fee ($) *
               </label>
               <input
                 type="number"
-                value={entryFee}
-                onChange={(e) => setEntryFee(e.target.value)}
+                value={oneTimeHookFee}
+                onChange={(e) => setOneTimeHookFee(e.target.value)}
                 placeholder="e.g., 50"
                 className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
@@ -364,19 +361,6 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
             </div>
           </div>
 
-          {/* Additional Info */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">
-              Additional Information
-            </label>
-            <textarea
-              value={additionalInfo}
-              onChange={(e) => setAdditionalInfo(e.target.value)}
-              placeholder="Any additional details about the event..."
-              className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-            />
-          </div>
-
           {/* File Upload for Tractor Pictures */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-700">
@@ -423,6 +407,19 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Additional Info */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Additional Information
+            </label>
+            <textarea
+              value={additionalInfo}
+              onChange={(e) => setAdditionalInfo(e.target.value)}
+              placeholder="Any additional details about the event..."
+              className="flex min-h-[140px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y"
+            />
           </div>
 
           {/* Modal Actions */}

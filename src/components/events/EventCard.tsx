@@ -15,7 +15,7 @@ interface EventCardProps {
   location: string;
   description: string;
   tags: string[];
-  entryFee: number;
+  oneTimeHookFee: number;
 }
 
 export function EventCard({
@@ -25,7 +25,7 @@ export function EventCard({
   location,
   description,
   tags,
-  entryFee,
+  oneTimeHookFee,
 }: EventCardProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
@@ -44,7 +44,7 @@ export function EventCard({
           </div>
           <div className="flex items-center gap-1">
             <DollarSign className="w-4 h-4 text-emerald-500 shrink-0" />
-            <span className="font-semibold text-gray-700">Entry Fee: ${entryFee || 0}</span>
+            <span className="font-semibold text-gray-700">One Time Hook Fee: ${oneTimeHookFee || 0}</span>
           </div>
         </div>
         <p className="text-sm text-gray-500 line-clamp-2">{description}</p>
