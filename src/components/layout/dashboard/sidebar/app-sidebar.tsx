@@ -51,7 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }, [userRole]);
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="icon" {...props}>
 
       <SidebarContent>
         <NavMain items={filteredNavMain} />
@@ -61,9 +61,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <SidebarMenuButton className="hover:text-red-500 hover:bg-red-50/50">
+                <SidebarMenuButton className="hover:text-red-500 hover:bg-red-50/50" tooltip="Log out">
                   <LogOut className="w-4 h-4" />
-                  Log out
+                  <span className="transition-all duration-200 ease-linear opacity-100 max-w-[200px] truncate group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:overflow-hidden">Log out</span>
                 </SidebarMenuButton>
               </AlertDialogTrigger>
               <AlertDialogContent className="bg-white rounded-2xl border-0 shadow-xl max-w-[400px] p-6">

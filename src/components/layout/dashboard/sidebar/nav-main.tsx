@@ -38,20 +38,14 @@ export function NavMain({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   tooltip={item.title}
-                  className={`rounded-md transition-colors py-[22px] px-4 ${
+                  className={`rounded-md py-2.5 px-3 text-sm h-10 ${
                     isActive
                       ? "bg-[#f0f7ff] text-[#3b82f6] font-semibold hover:bg-[#e0efff]"
                       : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
                   }`}
                 >
-                  {item.icon && (
-                    <span className="icon">
-                      {/* Pass 'fill' based on active state */}
-                      {item.icon && <item.icon />}
-                    </span>
-                  )}
-
-                  <span>{item.title}</span>
+                  {item.icon && <item.icon className="w-4 h-4 shrink-0" />}
+                  <span className="transition-all duration-200 ease-linear opacity-100 max-w-[200px] truncate group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:overflow-hidden">{item.title}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </Link>
