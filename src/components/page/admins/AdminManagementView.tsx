@@ -59,7 +59,6 @@ export default function AdminManagementView() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,10 +125,6 @@ export default function AdminManagementView() {
       toast.error("Phone number is required");
       return;
     }
-    if (!address.trim()) {
-      toast.error("Address is required");
-      return;
-    }
     if (!password || password.length < 6) {
       toast.error("Password must be at least 6 characters long");
       return;
@@ -146,7 +141,6 @@ export default function AdminManagementView() {
           fullName: fullName.trim(),
           email: email.trim().toLowerCase(),
           phone: phone.trim(),
-          address: address.trim(),
           password,
         },
       });
@@ -157,7 +151,6 @@ export default function AdminManagementView() {
         setFullName("");
         setEmail("");
         setPhone("");
-        setAddress("");
         setPassword("");
         setShowPassword(false);
         setIsAddModalOpen(false);
@@ -298,20 +291,6 @@ export default function AdminManagementView() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="e.g., +1 (555) 019-2834"
-                    className="h-11 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                {/* Address */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="address" className="text-gray-600 font-medium text-sm">Address *</Label>
-                  <Input
-                    id="address"
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="City, State, Zip"
                     className="h-11 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
                     disabled={isSubmitting}
                   />

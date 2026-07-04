@@ -26,7 +26,6 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
   const [password, setPassword] = useState("");
   const [vehicleName, setVehicleName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +46,7 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
     if (!fullName.trim()) return toast.error("Full Name is required");
     if (!email.trim() || !email.includes("@")) return toast.error("Valid Email is required");
     if (!phone.trim()) return toast.error("Phone number is required");
-    if (!address.trim()) return toast.error("Address is required");
+    if (!vehicleName.trim()) return toast.error("Vehicle Name is required");
     if (!password || password.length < 6) return toast.error("Password must be at least 6 characters");
 
     setIsSubmitting(true);
@@ -60,9 +59,8 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
           fullName: fullName.trim(),
           email: email.trim().toLowerCase(),
           phone: phone.trim(),
-          address: address.trim(),
           password,
-          vehicleName: vehicleName.trim() || undefined,
+          vehicleName: vehicleName.trim(),
         },
       });
 
@@ -73,7 +71,6 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
         setFullName("");
         setEmail("");
         setPhone("");
-        setAddress("");
         setPassword("");
         setVehicleName("");
         if (onSuccess) {
@@ -98,7 +95,6 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
         setFullName("");
         setEmail("");
         setPhone("");
-        setAddress("");
         setPassword("");
         setVehicleName("");
       }
@@ -148,25 +144,15 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="address">Address *</Label>
-            <Input
-              id="address"
-              placeholder="e.g. 123 Main St, Lincoln, NE"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-            />
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="vehicleName">Vehicle Name (Optional)</Label>
+              <Label htmlFor="vehicleName">Vehicle Name *</Label>
               <Input
                 id="vehicleName"
                 placeholder="e.g. Iron Horse"
                 value={vehicleName}
                 onChange={(e) => setVehicleName(e.target.value)}
+                required
               />
             </div>
             

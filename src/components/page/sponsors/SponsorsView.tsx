@@ -133,8 +133,8 @@ export default function SponsorsView({ initialSponsors }: { initialSponsors: any
                     <span className="font-bold text-sm text-gray-900 leading-tight truncate">
                       {sponsor.name}
                     </span>
-                    <span className="text-[11px] text-gray-500 font-semibold uppercase mt-0.5">
-                      Sponsor
+                    <span className="text-[10px] text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2 py-0.5 font-bold uppercase mt-1 w-fit">
+                      {sponsor.category || "Sponsor"}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">

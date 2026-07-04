@@ -24,6 +24,7 @@ interface AddSponsorModalProps {
 export function AddSponsorModal({ children, sponsor, onSuccess }: AddSponsorModalProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -35,6 +36,7 @@ export function AddSponsorModal({ children, sponsor, onSuccess }: AddSponsorModa
   useEffect(() => {
     if (open) {
       setName(sponsor?.name || "");
+      setCategory(sponsor?.category || "");
       setIsActive(sponsor ? sponsor.isActive : true);
       setSelectedFile(null);
       setPreviewUrl(sponsor?.image || null);
@@ -83,6 +85,10 @@ export function AddSponsorModal({ children, sponsor, onSuccess }: AddSponsorModa
       toast.error("Sponsor name is required");
       return;
     }
+    if (!category) {
+      toast.error("Sponsor category is required");
+      return;
+    }
     if (!sponsor && !selectedFile) {
       toast.error("Sponsor logo is required");
       return;
@@ -96,6 +102,7 @@ export function AddSponsorModal({ children, sponsor, onSuccess }: AddSponsorModa
       const formData = new FormData();
       const dataPayload = {
         name: name.trim(),
+        category,
         isActive,
       };
 
@@ -158,6 +165,26 @@ export function AddSponsorModal({ children, sponsor, onSuccess }: AddSponsorModa
               className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
               disabled={isLoading}
             />
+          </div>
+
+          {/* Sponsor Category */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">
+              Sponsor Category *
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              disabled={isLoading}
+            >
+              <option value="" disabled>Select Category</option>
+              <option value="Title Sponsor">Title Sponsor</option>
+              <option value="Series Sponsor">Series Sponsor</option>
+              <option value="Extreme Sponsor">Extreme Sponsor</option>
+              <option value="Premium Sponsor">Premium Sponsor</option>
+              <option value="Deluxe Sponsor">Deluxe Sponsor</option>
+            </select>
           </div>
 
 
