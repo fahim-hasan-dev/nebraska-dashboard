@@ -13,7 +13,6 @@ import {
   Search, 
   Eye, 
   EyeOff, 
-  MapPin, 
   Phone, 
   Mail,
   ChevronLeft,
@@ -59,8 +58,6 @@ export default function AdminManagementView() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Debounce search input
@@ -125,10 +122,6 @@ export default function AdminManagementView() {
       toast.error("Phone number is required");
       return;
     }
-    if (!password || password.length < 6) {
-      toast.error("Password must be at least 6 characters long");
-      return;
-    }
 
     setIsSubmitting(true);
     const toastId = "create-admin";
@@ -141,7 +134,6 @@ export default function AdminManagementView() {
           fullName: fullName.trim(),
           email: email.trim().toLowerCase(),
           phone: phone.trim(),
-          password,
         },
       });
 
@@ -151,8 +143,6 @@ export default function AdminManagementView() {
         setFullName("");
         setEmail("");
         setPhone("");
-        setPassword("");
-        setShowPassword(false);
         setIsAddModalOpen(false);
         fetchAdmins();
       } else {
@@ -296,28 +286,7 @@ export default function AdminManagementView() {
                   />
                 </div>
 
-                {/* Password */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="pass" className="text-gray-600 font-medium text-sm">Password *</Label>
-                  <div className="relative">
-                    <Input
-                      id="pass"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Minimum 6 characters"
-                      className="h-11 pr-10 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
-                      disabled={isSubmitting}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-650 cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-4">
@@ -397,7 +366,6 @@ export default function AdminManagementView() {
                   <tr>
                     <th className="px-6 py-4">Name</th>
                     <th className="px-6 py-4">Contact Info</th>
-                    <th className="px-6 py-4">Address</th>
                     <th className="px-6 py-4 text-center">Status</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
@@ -422,14 +390,6 @@ export default function AdminManagementView() {
                           <div className="flex items-center gap-1.5 text-gray-600 text-xs">
                             <Phone className="w-3.5 h-3.5 text-gray-400" />
                             <span>{admin.phone}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600 text-xs sm:text-sm">
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
-                            <span className="truncate max-w-[200px]" title={admin.address}>
-                              {admin.address || "N/A"}
-                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">

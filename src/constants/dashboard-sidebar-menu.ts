@@ -11,6 +11,7 @@ import {
   CircleHelp,
   Users,
   Image,
+  Lock,
 } from "lucide-react";
 
 export const sidebarMenu = {
@@ -81,6 +82,11 @@ export const sidebarMenu = {
       title: "Admins",
       url: "/admins",
       icon: Users,
+    },
+    {
+      title: "Change Password",
+      url: "/change-password",
+      icon: Lock,
     },
   ],
 

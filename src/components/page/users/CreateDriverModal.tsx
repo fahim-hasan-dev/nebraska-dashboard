@@ -26,19 +26,8 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
   const [vehicleName, setVehicleName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Generate a random secure password for convenience
-  const handleGeneratePassword = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-    let generated = "";
-    for (let i = 0; i < 10; i++) {
-      generated += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setPassword(generated);
-  };
 
   const handleCreateDriver = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +36,6 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
     if (!email.trim() || !email.includes("@")) return toast.error("Valid Email is required");
     if (!phone.trim()) return toast.error("Phone number is required");
     if (!vehicleName.trim()) return toast.error("Vehicle Name is required");
-    if (!password || password.length < 6) return toast.error("Password must be at least 6 characters");
 
     setIsSubmitting(true);
     toast.loading("Creating driver account...", { id: "create-driver" });
@@ -59,7 +47,6 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
           fullName: fullName.trim(),
           email: email.trim().toLowerCase(),
           phone: phone.trim(),
-          password,
           vehicleName: vehicleName.trim(),
         },
       });
@@ -71,7 +58,6 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
         setFullName("");
         setEmail("");
         setPhone("");
-        setPassword("");
         setVehicleName("");
         if (onSuccess) {
           onSuccess();
@@ -95,7 +81,6 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
         setFullName("");
         setEmail("");
         setPhone("");
-        setPassword("");
         setVehicleName("");
       }
     }}>
@@ -144,40 +129,15 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="vehicleName">Vehicle Name *</Label>
-              <Input
-                id="vehicleName"
-                placeholder="e.g. Iron Horse"
-                value={vehicleName}
-                onChange={(e) => setVehicleName(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Password *</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type="text"
-                  placeholder="Min 6 chars"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={handleGeneratePassword}
-                  title="Generate random password"
-                  className="absolute right-2.5 top-2.5 text-gray-400 hover:text-blue-500 transition-colors"
-                >
-                  <Key className="w-4 h-4 text-gray-400" />
-                </button>
-              </div>
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="vehicleName">Vehicle Name *</Label>
+            <Input
+              id="vehicleName"
+              placeholder="e.g. Iron Horse"
+              value={vehicleName}
+              onChange={(e) => setVehicleName(e.target.value)}
+              required
+            />
           </div>
 
           {/* Action Buttons */}
