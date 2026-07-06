@@ -141,7 +141,6 @@ export default function EventsView({ initialEvents, initialPagination }: EventsV
       location: event.venue || "TBD Location",
       description: event.additionalInfo || "No details provided.",
       tags: tags.length > 0 ? tags : ["Standard"],
-      oneTimeHookFee: event.oneTimeHookFee || 0,
     };
   });
 
@@ -197,7 +196,6 @@ export default function EventsView({ initialEvents, initialPagination }: EventsV
                 location={event.location}
                 description={event.description}
                 tags={event.tags}
-                oneTimeHookFee={event.oneTimeHookFee}
               />
             ))}
           </div>

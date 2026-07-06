@@ -34,7 +34,6 @@ interface IEventDetails {
     type: "Point";
     coordinates: [number, number];
   };
-  oneTimeHookFee: number;
   additionalInfo?: string;
   class?: IClassItem[];
   pictures?: string[];
@@ -130,7 +129,6 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   const [editStartDate, setEditStartDate] = useState("");
   const [editEndDate, setEditEndDate] = useState("");
   const [editVenue, setEditVenue] = useState("");
-  const [editOneTimeHookFee, setEditOneTimeHookFee] = useState("");
   const [editAdditionalInfo, setEditAdditionalInfo] = useState("");
   const [editSelectedFiles, setEditSelectedFiles] = useState<File[]>([]);
   const [editExistingPictures, setEditExistingPictures] = useState<string[]>([]);
@@ -202,7 +200,6 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
         setEditStartDate(formatToDatetimeLocal(response.data.startDate));
         setEditEndDate(formatToDatetimeLocal(response.data.endDate));
         setEditVenue(response.data.venue || "");
-        setEditOneTimeHookFee(String(response.data.oneTimeHookFee || ""));
         setEditAdditionalInfo(response.data.additionalInfo || "");
         setEditExistingPictures(response.data.pictures || []);
 
@@ -251,7 +248,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
   };
 
   const handleEditSubmit = async () => {
-    if (!editName || !editStartDate || !editEndDate || !editVenue || !editOneTimeHookFee) {
+    if (!editName || !editStartDate || !editEndDate || !editVenue) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -259,11 +256,6 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
     // Enforce geocoded address selection
     if (!editCoordinates) {
       toast.error("Please select a valid venue location from the address suggestions");
-      return;
-    }
-
-    if (isNaN(Number(editOneTimeHookFee)) || Number(editOneTimeHookFee) <= 0) {
-      toast.error("Please enter a valid positive one time hook fee");
       return;
     }
 
@@ -315,7 +307,6 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
           type: "Point",
           coordinates: [editCoordinates.lng, editCoordinates.lat], // [longitude, latitude]
         },
-        oneTimeHookFee: Number(editOneTimeHookFee),
         additionalInfo: editAdditionalInfo,
         pictures: editExistingPictures,
       };
@@ -462,64 +453,50 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
               </div>
 
               {/* Venue & Hook Fee */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2 relative" ref={editSuggestionsRef}>
-                  <label className="text-sm font-medium text-gray-700">
-                    Venue *
-                  </label>
-                  <input
-                    type="text"
-                    value={editVenue}
-                    onChange={(e) => handleEditVenueChange(e.target.value)}
-                    onFocus={() => {
-                      if (editSuggestions.length > 0) setShowEditSuggestions(true);
-                    }}
-                    placeholder="Search address..."
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    required
-                  />
+              {/* Venue */}
+              <div className="flex flex-col gap-2 relative" ref={editSuggestionsRef}>
+                <label className="text-sm font-medium text-gray-700">
+                  Venue *
+                </label>
+                <input
+                  type="text"
+                  value={editVenue}
+                  onChange={(e) => handleEditVenueChange(e.target.value)}
+                  onFocus={() => {
+                    if (editSuggestions.length > 0) setShowEditSuggestions(true);
+                  }}
+                  placeholder="Search address..."
+                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
 
-                  {/* Location locked feedback */}
-                  {editCoordinates && (
-                    <span className="text-[10px] text-green-600 font-bold absolute right-2.5 top-8.5 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
-                      ✓ Geocoded
-                    </span>
-                  )}
+                {/* Location locked feedback */}
+                {editCoordinates && (
+                  <span className="text-[10px] text-green-600 font-bold absolute right-2.5 top-8.5 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
+                    ✓ Geocoded
+                  </span>
+                )}
 
-                  {/* Suggestions popover */}
-                  {showEditSuggestions && (
-                    <div className="absolute left-0 right-0 top-[68px] z-50 bg-white border border-gray-250 rounded-xl shadow-xl max-h-52 overflow-y-auto divide-y divide-gray-100 animate-in fade-in slide-in-from-top-1 duration-150">
-                      {isSearchingEditSuggestions ? (
-                        <div className="px-4 py-3 text-xs text-gray-400 font-medium flex items-center gap-1.5">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
-                          Searching addresses...
-                        </div>
-                      ) : editSuggestions.map((s, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleSelectEditSuggestion(s)}
-                          className="w-full text-left px-4 py-2.5 hover:bg-gray-50 text-xs font-semibold text-gray-700 truncate block transition-colors"
-                        >
-                          {s.description}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    One Time Hook Fee ($) *
-                  </label>
-                  <input
-                    type="number"
-                    value={editOneTimeHookFee}
-                    onChange={(e) => setEditOneTimeHookFee(e.target.value)}
-                    placeholder="e.g., 50"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    required
-                  />
-                </div>
+                {/* Suggestions popover */}
+                {showEditSuggestions && (
+                  <div className="absolute left-0 right-0 top-[68px] z-50 bg-white border border-gray-250 rounded-xl shadow-xl max-h-52 overflow-y-auto divide-y divide-gray-100 animate-in fade-in slide-in-from-top-1 duration-150">
+                    {isSearchingEditSuggestions ? (
+                      <div className="px-4 py-3 text-xs text-gray-400 font-medium flex items-center gap-1.5">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                        Searching addresses...
+                      </div>
+                    ) : editSuggestions.map((s, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectEditSuggestion(s)}
+                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 text-xs font-semibold text-gray-700 truncate block transition-colors"
+                      >
+                        {s.description}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Tractor Pictures Previews */}
@@ -710,16 +687,7 @@ export default function EventDetailView({ eventId }: EventDetailViewProps) {
               </div>
             </div>
 
-            <div className="flex items-start gap-4">
-              <div className="p-2.5 bg-blue-50 border border-blue-100/50 rounded-xl shadow-sm">
-                <DollarSign className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div className="flex flex-col justify-center">
-                <span className="text-[13px] text-gray-500 font-medium uppercase tracking-wide">One Time Hook Fee</span>
-                <span className="text-[15px] font-bold text-gray-900 mt-0.5">${event.oneTimeHookFee || 0}</span>
-              </div>
             </div>
-          </div>
         </div>
       </div>
 

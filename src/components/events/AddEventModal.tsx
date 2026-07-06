@@ -29,7 +29,6 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [venue, setVenue] = useState("");
-  const [oneTimeHookFee, setOneTimeHookFee] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [classes, setClasses] = useState<string[]>([""]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -123,18 +122,14 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
   // Submit the form
   const handleSubmit = async () => {
     // Validation
-    if (!name || !startDate || !endDate || !venue || !oneTimeHookFee) {
+    // Validation
+    if (!name || !startDate || !endDate || !venue) {
       toast.error("Please fill in all required fields marked with *");
       return;
     }
 
     if (!coordinates) {
       toast.error("Please select a valid venue location from the address suggestions");
-      return;
-    }
-
-    if (isNaN(Number(oneTimeHookFee)) || Number(oneTimeHookFee) <= 0) {
-      toast.error("Please enter a valid positive one time hook fee");
       return;
     }
 
@@ -160,7 +155,6 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
           type: "Point",
           coordinates: [coordinates.lng, coordinates.lat], // [longitude, latitude]
         },
-        oneTimeHookFee: Number(oneTimeHookFee),
         additionalInfo,
         class: activeClasses.map((className) => ({
           name: className,
@@ -190,7 +184,6 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
         setEndDate("");
         setVenue("");
         setCoordinates(null);
-        setOneTimeHookFee("");
         setAdditionalInfo("");
         setClasses([""]);
         setSelectedFiles([]);
@@ -258,65 +251,50 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
             </div>
           </div>
 
-          {/* Venue & Hook Fee */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2 relative" ref={suggestionsRef}>
-              <label className="text-sm font-medium text-gray-700">
-                Venue *
-              </label>
-              <input
-                type="text"
-                value={venue}
-                onChange={(e) => handleVenueChange(e.target.value)}
-                onFocus={() => {
-                  if (suggestions.length > 0) setShowSuggestions(true);
-                }}
-                placeholder="Search address..."
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                required
-              />
-              
-              {/* Location locked feedback */}
-              {coordinates && (
-                <span className="text-[10px] text-green-600 font-bold absolute right-2.5 top-8.5 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
-                  ✓ Geocoded
-                </span>
-              )}
+          {/* Venue */}
+          <div className="flex flex-col gap-2 relative" ref={suggestionsRef}>
+            <label className="text-sm font-medium text-gray-700">
+              Venue *
+            </label>
+            <input
+              type="text"
+              value={venue}
+              onChange={(e) => handleVenueChange(e.target.value)}
+              onFocus={() => {
+                if (suggestions.length > 0) setShowSuggestions(true);
+              }}
+              placeholder="Search address..."
+              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              required
+            />
+            
+            {/* Location locked feedback */}
+            {coordinates && (
+              <span className="text-[10px] text-green-600 font-bold absolute right-2.5 top-8.5 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
+                ✓ Geocoded
+              </span>
+            )}
 
-              {/* Suggestions popover */}
-              {showSuggestions && (
-                <div className="absolute left-0 right-0 top-[68px] z-50 bg-white border border-gray-250 rounded-xl shadow-xl max-h-52 overflow-y-auto divide-y divide-gray-100 animate-in fade-in slide-in-from-top-1 duration-150">
-                  {isSearchingSuggestions ? (
-                    <div className="px-4 py-3 text-xs text-gray-400 font-medium flex items-center gap-1.5">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
-                      Searching addresses...
-                    </div>
-                  ) : suggestions.map((s, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleSelectSuggestion(s)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 text-xs font-semibold text-gray-700 truncate block transition-colors"
-                    >
-                      {s.description}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-700">
-                One Time Hook Fee ($) *
-              </label>
-              <input
-                type="number"
-                value={oneTimeHookFee}
-                onChange={(e) => setOneTimeHookFee(e.target.value)}
-                placeholder="e.g., 50"
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                required
-              />
-            </div>
+            {/* Suggestions popover */}
+            {showSuggestions && (
+              <div className="absolute left-0 right-0 top-[68px] z-50 bg-white border border-gray-250 rounded-xl shadow-xl max-h-52 overflow-y-auto divide-y divide-gray-100 animate-in fade-in slide-in-from-top-1 duration-150">
+                {isSearchingSuggestions ? (
+                  <div className="px-4 py-3 text-xs text-gray-400 font-medium flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                    Searching addresses...
+                  </div>
+                ) : suggestions.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSelectSuggestion(s)}
+                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 text-xs font-semibold text-gray-700 truncate block transition-colors"
+                  >
+                    {s.description}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Dynamic Classes Input */}
