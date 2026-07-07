@@ -9,8 +9,19 @@ const AUTH_ROUTES = [
   "/otp-verify",
 ];
 
+// Define routes that are completely public
+const PUBLIC_ROUTES = [
+  "/privacy-policy",
+  "/terms-and-conditions",
+];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // 0. If the path is a public route, allow access
+  if (PUBLIC_ROUTES.some((route) => pathname === route)) {
+    return NextResponse.next();
+  }
 
   // 1. Retrieve the accessToken from cookies
   const accessToken = request.cookies.get("accessToken")?.value;
