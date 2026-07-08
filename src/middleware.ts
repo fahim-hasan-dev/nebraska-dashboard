@@ -13,6 +13,7 @@ const AUTH_ROUTES = [
 const PUBLIC_ROUTES = [
   "/privacy-policy",
   "/terms-and-conditions",
+  "/delete-user-account",
 ];
 
 export function middleware(request: NextRequest) {

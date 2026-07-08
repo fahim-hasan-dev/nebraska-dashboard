@@ -49,7 +49,7 @@ export default function TermsAndConditionsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-[#f3f4f6] via-[#f9fafb] to-[#f3f4f6] py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#f8f9fa] py-16 px-4 sm:px-6 lg:px-8">
       {/* Custom styles for rendering rich text Jodit HTML content beautifully */}
       <style jsx global>{`
         .legal-content h1, .legal-content h2, .legal-content h3 {
@@ -103,7 +103,7 @@ export default function TermsAndConditionsPage() {
         {/* Top Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 no-print">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-[#3b82f6] shadow-sm border border-blue-100">
               <Scale className="w-6 h-6" />
             </div>
             <div>
@@ -114,16 +114,16 @@ export default function TermsAndConditionsPage() {
         </div>
 
         {/* Content Card */}
-        <div className="bg-white border border-gray-200/80 rounded-2xl p-6 sm:p-10 shadow-sm print-card">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 sm:p-10 shadow-sm print-card">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-              <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
+              <Loader2 className="w-10 h-10 text-[#3b82f6] animate-spin mb-4" />
               <p className="text-sm font-medium">Retrieving terms content...</p>
             </div>
           ) : (
             <>
               {error && (
-                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl flex items-start gap-3 no-print">
+                <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl flex items-start gap-3 no-print">
                   <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                   <div className="text-sm font-medium">
                     {error} Showing cached offline content.
