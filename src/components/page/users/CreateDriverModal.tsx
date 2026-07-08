@@ -24,7 +24,6 @@ interface CreateDriverModalProps {
 export default function CreateDriverModal({ children, onSuccess }: CreateDriverModalProps) {
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [vehicleName, setVehicleName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,7 +32,6 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
     e.preventDefault();
 
     if (!fullName.trim()) return toast.error("Full Name is required");
-    if (!email.trim() || !email.includes("@")) return toast.error("Valid Email is required");
     if (!phone.trim()) return toast.error("Phone number is required");
     if (!vehicleName.trim()) return toast.error("Vehicle Name is required");
 
@@ -45,18 +43,16 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
         method: "POST",
         body: {
           fullName: fullName.trim(),
-          email: email.trim().toLowerCase(),
           phone: phone.trim(),
           vehicleName: vehicleName.trim(),
         },
       });
 
       if (res.success) {
-        toast.success("Driver account created successfully! Credentials sent to driver's email.", { id: "create-driver" });
+        toast.success("Driver account created successfully!", { id: "create-driver" });
         setOpen(false);
         // Reset form
         setFullName("");
-        setEmail("");
         setPhone("");
         setVehicleName("");
         if (onSuccess) {
@@ -79,7 +75,6 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
       if (!val) {
         // Reset on close
         setFullName("");
-        setEmail("");
         setPhone("");
         setVehicleName("");
       }
@@ -102,18 +97,6 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
               placeholder="e.g. John Doe"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email Address *</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="e.g. john@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
