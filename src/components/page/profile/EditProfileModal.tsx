@@ -38,7 +38,7 @@ import {
 import { userGenders } from "@/constants/user";
 
 const EditProfileModal = ({ user }) => {
-  const [file, setFile] = useState<File | string | null>(user.image);
+  const [_file, setFile] = useState<File | string | null>(user.image);
 
   // 2. Define your form.
   const form = useForm<z.infer<typeof editProfileFormSchema>>({
@@ -47,12 +47,10 @@ const EditProfileModal = ({ user }) => {
   });
 
   // 3. Define a submit handler.
-  async function onSubmit(values: z.infer<typeof editProfileFormSchema>) {
+  async function onSubmit(_values: z.infer<typeof editProfileFormSchema>) {
     toast.loading("Updating...", {
       id: "update-profile",
     });
-    console.log(values, file);
-
     try {
       // perform the API call to update the user profile
 
@@ -63,7 +61,7 @@ const EditProfileModal = ({ user }) => {
       toast.error("Failed to update", {
         id: "update-profile",
       });
-      console.log(error);
+      console.error("Error updating profile:", error);
     }
   }
 

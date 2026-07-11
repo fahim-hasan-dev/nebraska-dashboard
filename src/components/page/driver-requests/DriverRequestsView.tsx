@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-
 import { useState, useEffect } from "react";
-import { Clock, CheckCircle2, Shuffle, ChevronDown, Search, Loader2 } from "lucide-react";
+import { Clock, CheckCircle2, ChevronDown, Loader2, Shuffle } from "lucide-react";
 import { DriverRequestsTable } from "@/components/driver-requests/DriverRequestsTable";
 import { AddDriverModal } from "@/components/driver-requests/AddDriverModal";
 import { RunDrawModal } from "@/components/driver-requests/RunDrawModal";
@@ -10,89 +9,37 @@ import SearchableInfiniteSelect from "@/components/ui/SearchableInfiniteSelect";
 import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
 import { CustomPagination } from "@/components/ui/custom-pagination";
-
+import { useListQuery } from "@/hooks/useListQuery";
 export default function DriverRequestsView() {
-  const [registrations, setRegistrations] = useState<any[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Filter states
+  // Filter category states
   const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [selectedClassName, setSelectedClassName] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
 
-  // Stats states
+  // Statistics counters
   const [pendingCount, setPendingCount] = useState(0);
   const [approvedCount, setApprovedCount] = useState(0);
 
-  // Pagination states
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-
-  // Search states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-  const [hasLoadedFromApi, setHasLoadedFromApi] = useState(false);
-
-  // Debounce search query changes to prevent heavy server load
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 400);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchQuery]);
-
-  // Fetch registrations
-  const fetchRegistrations = async () => {
-    if (!selectedEventId || !selectedClassName) {
-      setRegistrations([]);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.append("page", String(page));
-      params.append("limit", "10");
-      params.append("event", selectedEventId);
-      params.append("class", selectedClassName);
-      if (selectedStatus) params.append("status", selectedStatus);
-      if (debouncedSearchQuery) {
-        params.append("searchTerm", debouncedSearchQuery);
-      }
-
-      const res = await myFetch(`/event-registration?${params.toString()}`, {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      if (res.success && res.data) {
-        const list = Array.isArray(res.data) 
-          ? res.data 
-          : (res.data?.data && Array.isArray(res.data.data) ? res.data.data : []);
-        setRegistrations(list);
-        setHasLoadedFromApi(true);
-
-        if (res.pagination) {
-          setTotalPages(res.pagination.totalPage || 1);
-          setTotalItems(res.pagination.total || list.length);
-        } else {
-          setTotalPages(1);
-          setTotalItems(list.length);
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching registrations:", err);
-      toast.error("Failed to load registrations");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Integrated list query management
+  const {
+    data: registrations,
+    isLoading,
+    page,
+    setPage,
+    totalPages,
+    refresh: fetchRegistrations,
+  } = useListQuery<any>({
+    endpoint: "/event-registration",
+    initialParams: {
+      limit: "10",
+      event: selectedEventId,
+      class: selectedClassName,
+      status: selectedStatus,
+    },
+    // Prevent fetching if required Event and Class filters are not selected yet
+    skip: !selectedEventId || !selectedClassName,
+  });
 
   // Fetch stats count across registrations (event-specific if selected)
   const fetchStats = async () => {
@@ -127,44 +74,8 @@ export default function DriverRequestsView() {
   };
 
   useEffect(() => {
-    fetchRegistrations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, selectedEventId, selectedClassName, selectedStatus]);
-
-  useEffect(() => {
-    if (page === 1) {
-      fetchRegistrations();
-    } else {
-      setPage(1);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchQuery]);
-
-  useEffect(() => {
     fetchStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registrations, selectedEventId, selectedClassName]);
-
-  const filteredRegistrations = registrations.filter((reg) => {
-    const search = debouncedSearchQuery.toLowerCase();
-    const driverName = reg.driver?.fullName || "";
-    const email = reg.driver?.email || "";
-    const phone = reg.driver?.phone || "";
-    const tractors = reg.driver?.tractorName?.join(", ") || "";
-    const registeredTractor = reg.tractor || "";
-    const eventName = reg.event?.name || "";
-    const className = reg.class || "";
-
-    return (
-      driverName.toLowerCase().includes(search) ||
-      email.toLowerCase().includes(search) ||
-      phone.toLowerCase().includes(search) ||
-      tractors.toLowerCase().includes(search) ||
-      registeredTractor.toLowerCase().includes(search) ||
-      eventName.toLowerCase().includes(search) ||
-      className.toLowerCase().includes(search)
-    );
-  });
 
   const handleAccept = async (id: string) => {
     toast.loading("Accepting request...", { id: "accept-request" });
@@ -342,7 +253,7 @@ export default function DriverRequestsView() {
       ) : (
         <>
           <DriverRequestsTable
-            data={filteredRegistrations}
+            data={registrations}
             onAccept={handleAccept}
             onDelete={handleDelete}
           />

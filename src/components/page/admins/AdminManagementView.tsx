@@ -1,31 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { 
   Users, 
-  Plus, 
   Trash2, 
   Loader2, 
   ShieldAlert, 
   UserCheck, 
   UserX, 
   Search, 
-  Eye, 
-  EyeOff, 
   Phone, 
   Mail,
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
 import DeleteModal from "@/components/modals/DeleteModal";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useListQuery } from "@/hooks/useListQuery";
+import AddAdminModal from "./AddAdminModal";
 
 export default function AdminManagementView() {
   const { user } = useAuthContext();
@@ -41,120 +36,21 @@ export default function AdminManagementView() {
     }
   }, [user]);
 
-  // List states
-  const [adminsList, setAdminsList] = useState<any[]>([]);
-  const [totalAdmins, setTotalAdmins] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Search & Pagination states
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-
-  // Add Admin Modal states
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Debounce search input
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-      setPage(1); // Reset to page 1 on new search
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
-
-  // Fetch admin list
-  const fetchAdmins = async () => {
-    if (userRole !== "super-admin" && userRole !== "super_admin") return;
-    setIsLoading(true);
-    try {
-      const queryParams = new URLSearchParams({
-        page: String(page),
-        limit: String(limit),
-      });
-      if (debouncedSearch.trim()) {
-        queryParams.append("searchTerm", debouncedSearch.trim());
-      }
-
-      const res = await myFetch(`/user/admin?${queryParams.toString()}`, {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      if (res.success && res.data) {
-        setAdminsList(res.data.admins || []);
-        setTotalAdmins(res.data.staticData?.totalAdmins || res.data.meta?.total || 0);
-        setTotalPages(res.data.meta?.totalPage || 1);
-      } else {
-        setAdminsList([]);
-        setTotalAdmins(0);
-        setTotalPages(1);
-      }
-    } catch (error) {
-      console.error("Error fetching admins:", error);
-      toast.error("Failed to load administrator accounts");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAdmins();
-  }, [page, debouncedSearch, userRole]);
-
-  // Handle create admin submit
-  const handleAddAdmin = async () => {
-    if (!fullName.trim()) {
-      toast.error("Full name is required");
-      return;
-    }
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-    if (!phone.trim()) {
-      toast.error("Phone number is required");
-      return;
-    }
-
-    setIsSubmitting(true);
-    const toastId = "create-admin";
-    toast.loading("Creating admin account...", { id: toastId });
-
-    try {
-      const res = await myFetch("/user/admin", {
-        method: "POST",
-        body: {
-          fullName: fullName.trim(),
-          email: email.trim().toLowerCase(),
-          phone: phone.trim(),
-        },
-      });
-
-      if (res.success) {
-        toast.success("Admin account created successfully!", { id: toastId });
-        // Reset state
-        setFullName("");
-        setEmail("");
-        setPhone("");
-        setIsAddModalOpen(false);
-        fetchAdmins();
-      } else {
-        toast.error(res.message || "Failed to create admin account", { id: toastId });
-      }
-    } catch (error) {
-      console.error("Error creating admin:", error);
-      toast.error("An unexpected error occurred. Please try again.", { id: toastId });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // Integrated list query management for administrators
+  const {
+    data: adminsList,
+    isLoading,
+    searchTerm,
+    setSearchTerm,
+    page,
+    setPage,
+    totalPages,
+    totalItems: totalAdmins,
+    refresh: fetchAdmins,
+  } = useListQuery<any>({
+    endpoint: "/user/admin",
+    initialParams: { limit: "10" },
+  });
 
   // Toggle admin active/restricted status
   const handleToggleStatus = async (admin: any) => {
@@ -226,92 +122,8 @@ export default function AdminManagementView() {
           </p>
         </div>
 
-        {/* Add Admin Dialog */}
-        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-[#3b82f6] hover:bg-blue-600 text-white h-10 px-6 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 shadow-sm self-start sm:self-auto cursor-pointer">
-              <Plus className="w-4 h-4" />
-              Add New Admin
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[450px] p-0 border-0 rounded-2xl bg-white shadow-xl overflow-hidden">
-            <div className="p-8 w-full max-w-full">
-              <DialogHeader className="mb-6">
-                <DialogTitle className="text-2xl font-bold text-center text-gray-800 flex items-center justify-center gap-2">
-                  <Users className="w-6 h-6 text-blue-500" />
-                  Add Administrator
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                {/* Full Name */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="fullName" className="text-gray-600 font-medium text-sm">Full Name *</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Enter full name"
-                    className="h-11 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-gray-600 font-medium text-sm">Email Address *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@example.com"
-                    className="h-11 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                {/* Phone */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-gray-600 font-medium text-sm">Phone Number *</Label>
-                  <Input
-                    id="phone"
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="e.g., +1 (555) 019-2834"
-                    className="h-11 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddModalOpen(false)}
-                    className="flex-1 h-11 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-semibold text-sm transition-colors cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-50 flex items-center justify-center"
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAddAdmin}
-                    className="flex-1 h-11 bg-[#3b82f6] hover:bg-blue-600 disabled:bg-blue-400 text-white rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                    Create Admin
-                  </button>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Refactored Modular Admin Addition Modal */}
+        <AddAdminModal onSuccess={fetchAdmins} />
       </div>
 
       {/* Search Input Box */}

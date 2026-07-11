@@ -52,7 +52,6 @@ export default function EventsView({ initialEvents, initialPagination }: EventsV
   // Pagination states
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialPagination?.totalPage || 1);
-  const [totalItems, setTotalItems] = useState(initialPagination?.total || 0);
 
   // Search states
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,10 +93,8 @@ export default function EventsView({ initialEvents, initialPagination }: EventsV
 
         if (response.pagination) {
           setTotalPages(response.pagination.totalPage || 1);
-          setTotalItems(response.pagination.total || list.length);
         } else {
           setTotalPages(1);
-          setTotalItems(list.length);
         }
       }
     } catch (error) {
@@ -182,7 +179,7 @@ export default function EventsView({ initialEvents, initialPagination }: EventsV
         </div>
       ) : formattedEvents.length === 0 ? (
         <div className="border border-dashed border-gray-200 rounded-xl p-12 text-center text-gray-400 mt-4">
-          No events found. Click "Add Event" to get started!
+          No events found. Click &quot;Add Event&quot; to get started!
         </div>
       ) : (
         <>

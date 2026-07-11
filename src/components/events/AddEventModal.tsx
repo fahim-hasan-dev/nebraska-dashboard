@@ -1,8 +1,8 @@
 "use client";
 
 import { UploadCloud, Plus, X, Loader2 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-import { getAddressSuggestions, getPlaceCoordinates } from "@/app/actions/mapActions";
+import { useState, useRef } from "react";
+import AddressInput from "@/components/ui/AddressInput";
 import {
   Dialog,
   DialogContent,
@@ -28,61 +28,15 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [venue, setVenue] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [classes, setClasses] = useState<string[]>([""]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Map and Address Autocomplete states
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  // Local address states managed by AddressInput
+  const [venue, setVenue] = useState("");
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSearchingSuggestions, setIsSearchingSuggestions] = useState(false);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleVenueChange = async (val: string) => {
-    setVenue(val);
-    setCoordinates(null); // Reset coordinates when user types
-    if (val.trim().length >= 3) {
-      setIsSearchingSuggestions(true);
-      const results = await getAddressSuggestions(val);
-      setSuggestions(results);
-      setShowSuggestions(true);
-      setIsSearchingSuggestions(false);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  };
-
-  const handleSelectSuggestion = async (suggestion: any) => {
-    if (suggestion.placeId === "error") {
-      setShowSuggestions(false);
-      return;
-    }
-    setVenue(suggestion.description);
-    setShowSuggestions(false);
-    toast.loading("Locating coordinates...", { id: "locate-coords" });
-    const coords = await getPlaceCoordinates(suggestion.placeId);
-    if (coords) {
-      setCoordinates(coords);
-      toast.success("Location locked!", { id: "locate-coords" });
-    } else {
-      toast.error("Failed to retrieve coordinates for this address", { id: "locate-coords" });
-    }
-  };
 
   // Dynamic class field handlers
   const handleClassChange = (index: number, value: string) => {
@@ -251,51 +205,15 @@ export function AddEventModal({ children, onSuccess }: AddEventModalProps) {
             </div>
           </div>
 
-          {/* Venue */}
-          <div className="flex flex-col gap-2 relative" ref={suggestionsRef}>
-            <label className="text-sm font-medium text-gray-700">
-              Venue *
-            </label>
-            <input
-              type="text"
-              value={venue}
-              onChange={(e) => handleVenueChange(e.target.value)}
-              onFocus={() => {
-                if (suggestions.length > 0) setShowSuggestions(true);
-              }}
-              placeholder="Search address..."
-              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              required
-            />
-            
-            {/* Location locked feedback */}
-            {coordinates && (
-              <span className="text-[10px] text-green-600 font-bold absolute right-2.5 top-8.5 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
-                ✓ Geocoded
-              </span>
-            )}
-
-            {/* Suggestions popover */}
-            {showSuggestions && (
-              <div className="absolute left-0 right-0 top-[68px] z-50 bg-white border border-gray-250 rounded-xl shadow-xl max-h-52 overflow-y-auto divide-y divide-gray-100 animate-in fade-in slide-in-from-top-1 duration-150">
-                {isSearchingSuggestions ? (
-                  <div className="px-4 py-3 text-xs text-gray-400 font-medium flex items-center gap-1.5">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
-                    Searching addresses...
-                  </div>
-                ) : suggestions.map((s, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSelectSuggestion(s)}
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 text-xs font-semibold text-gray-700 truncate block transition-colors"
-                  >
-                    {s.description}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Venue Autocomplete Input */}
+          <AddressInput
+            label="Venue *"
+            placeholder="Search address..."
+            value={venue}
+            onChange={setVenue}
+            onCoordinatesChange={setCoordinates}
+            required={true}
+          />
 
           {/* Dynamic Classes Input */}
           <div className="flex flex-col gap-2">

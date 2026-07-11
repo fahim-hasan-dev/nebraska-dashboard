@@ -46,9 +46,9 @@ export function EventCard({
       <div className="border-t border-gray-100" />
       <div className="p-4 px-6 flex justify-between items-center bg-white">
         <div className="flex flex-wrap items-center gap-2">
-          {tags.map((tag) => (
+          {tags.map((tag, idx) => (
             <span
-              key={tag}
+              key={`${tag}-${idx}`}
               className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-md font-medium"
             >
               {tag}

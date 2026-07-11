@@ -24,7 +24,7 @@ const notificationTableColumns: ColumnDef<IUser>[] = [
       const item = row.original as IUser;
       return (
         <p className="px-2">
-          {item?.firstName} {item?.lastName}
+          {item?.fullName}
         </p>
       );
     },
@@ -42,7 +42,7 @@ const notificationTableColumns: ColumnDef<IUser>[] = [
     header: () => <div>Location</div>,
     cell: ({ row }) => {
       const item = row.original as IUser;
-      return <p className="px-2">{item?.location}</p>;
+      return <p className="px-2">{item?.address}</p>;
     },
   },
   {
@@ -53,9 +53,9 @@ const notificationTableColumns: ColumnDef<IUser>[] = [
       return (
         <Badge
           className={`capitalize font-medium text-white shadow-none rounded-full py-1.5 w-full flex justify-center ${
-            item?.role === "Admin"
+            item?.role === "admin"
               ? "bg-purple-50 text-purple-500 border-purple-400"
-              : item?.role === "Buyer"
+              : item?.role === "driver"
               ? "bg-green-50 text-green-600 border-green-400"
               : "bg-orange-50 text-orange-500 border-orange-400"
           }`}

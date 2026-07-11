@@ -1,222 +1,58 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
-import { ChevronDown, Plus, Trash2, Loader2, Trophy, AlertCircle, Car, Pencil } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { ChevronDown, Trash2, Loader2, Trophy, AlertCircle, Car, Pencil } from "lucide-react";
 import SearchableInfiniteSelect from "@/components/ui/SearchableInfiniteSelect";
 import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
 import DeleteModal from "@/components/modals/DeleteModal";
+import { useListQuery } from "@/hooks/useListQuery";
+import AddResultModal from "./AddResultModal";
+import EditResultModal from "./EditResultModal";
 
-interface ResultsViewProps {
-  initialEvents: any[];
-  initialDrivers: any[];
-}
-
-export default function ResultsView({}: ResultsViewProps) {
-  // Filtering states
+export default function ResultsView() {
+  // Filtering and standings selection states
   const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [selectedClassName, setSelectedClassName] = useState<string>("");
-  const [resultsList, setResultsList] = useState<any[]>([]);
-  const [isTableLoading, setIsTableLoading] = useState<boolean>(false);
-
-  // Modal form states
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [modalEventId, setModalEventId] = useState<string>("");
-  const [modalSelectedEvent, setModalSelectedEvent] = useState<any>(null);
-  const [modalClassName, setModalClassName] = useState<string>("");
-  const [modalDriverId, setModalDriverId] = useState<string>("");
-  const [modalDistance, setModalDistance] = useState<string>("");
-  const [modalPoint, setModalPoint] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit Modal form states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingResultId, setEditingResultId] = useState<string>("");
-  const [editEventId, setEditEventId] = useState<string>("");
-  const [editSelectedEvent, setEditSelectedEvent] = useState<any>(null);
-  const [editClassName, setEditClassName] = useState<string>("");
-  const [editDriverId, setEditDriverId] = useState<string>("");
-  const [editDriverName, setEditDriverName] = useState<string>("");
-  const [editDistance, setEditDistance] = useState<string>("");
-  const [editPoint, setEditPoint] = useState<string>("");
-  const [isEditingSubmitting, setIsEditingSubmitting] = useState(false);
+  const [editingResult, setEditingResult] = useState<any>(null);
 
-  // Fetch results when Event and Class filters are chosen
-  const fetchResults = async (eventId: string, className: string) => {
-    if (!eventId || !className) return;
-    setIsTableLoading(true);
-    try {
-      const res = await myFetch(`/result?event=${eventId}&class=${className}&limit=100&sort=-point`, {
-        method: "GET",
-        cache: "no-store",
-      });
-      if (res.success && res.data) {
-        const rawResults = Array.isArray(res.data) ? res.data : (res.data.data || []);
-        setResultsList(rawResults);
-      } else {
-        setResultsList([]);
-      }
-    } catch (error) {
-      console.error("Error fetching results:", error);
-      toast.error("Failed to load pull results");
-    } finally {
-      setIsTableLoading(false);
-    }
-  };
+  // Integrated list query management for rankings standings (top 100 entries)
+  const {
+    data: resultsList,
+    isLoading: isTableLoading,
+    refresh: fetchResults,
+  } = useListQuery<any>({
+    endpoint: "/result",
+    initialParams: {
+      limit: "100",
+      event: selectedEventId,
+      class: selectedClassName,
+      sort: "-point",
+    },
+    // Only run the API request if required filters are selected
+    skip: !selectedEventId || !selectedClassName,
+  });
 
-  // Trigger results fetch on change of Event & Class
-  useEffect(() => {
-    if (selectedEventId && selectedClassName) {
-      fetchResults(selectedEventId, selectedClassName);
+  const handleAddSuccess = (eventId: string, className: string, eventObj: any) => {
+    // If the added result matches current filters, reload results
+    if (eventId === selectedEventId && className === selectedClassName) {
+      fetchResults();
     } else {
-      setResultsList([]);
-    }
-  }, [selectedEventId, selectedClassName]);
-
-  // Add new result submission handler
-  const handleAddResult = async () => {
-    if (!modalEventId) {
-      toast.error("Please select an event");
-      return;
-    }
-    if (!modalClassName) {
-      toast.error("Please select a class");
-      return;
-    }
-    if (!modalDriverId) {
-      toast.error("Please select a driver");
-      return;
-    }
-    if (!modalDistance || isNaN(Number(modalDistance)) || Number(modalDistance) <= 0) {
-      toast.error("Please enter a valid positive distance");
-      return;
-    }
-    if (!modalPoint || isNaN(Number(modalPoint)) || Number(modalPoint) < 0) {
-      toast.error("Please enter a valid points value");
-      return;
-    }
-
-    setIsSubmitting(true);
-    toast.loading("Recording result...", { id: "result-action" });
-
-    try {
-      const res = await myFetch("/result/create", {
-        method: "POST",
-        body: {
-          event: modalEventId,
-          class: modalClassName,
-          driver: modalDriverId,
-          distance: Number(modalDistance),
-          point: Number(modalPoint),
-        },
-      });
-
-      if (res.success) {
-        toast.success("Result recorded successfully!", { id: "result-action" });
-        
-        // Reset form fields
-        setModalEventId("");
-        setModalSelectedEvent(null);
-        setModalClassName("");
-        setModalDriverId("");
-        setModalDistance("");
-        setModalPoint("");
-        setIsAddModalOpen(false);
-
-        // If newly added result matches current filters, reload results
-        if (modalEventId === selectedEventId && modalClassName === selectedClassName) {
-          fetchResults(selectedEventId, selectedClassName);
-        } else {
-          // Auto swap filters to show the new result
-          setSelectedEventId(modalEventId);
-          setSelectedEvent(modalSelectedEvent);
-          setSelectedClassName(modalClassName);
-        }
-      } else {
-        toast.error(res.message || "Failed to record result", { id: "result-action" });
-      }
-    } catch (error) {
-      console.error("Error creating result:", error);
-      toast.error("An error occurred while recording result", { id: "result-action" });
-    } finally {
-      setIsSubmitting(false);
+      // Auto swap filters to show the new result
+      setSelectedEventId(eventId);
+      setSelectedEvent(eventObj);
+      setSelectedClassName(className);
     }
   };
 
   const openEditModal = (result: any) => {
-    setEditingResultId(result._id || result.id);
-    setEditEventId(result.event?._id || result.event?.id || result.event || "");
-    setEditSelectedEvent(result.event);
-    setEditClassName(result.class || "");
-    setEditDriverId(result.driver?._id || result.driver?.id || result.driver || "");
-    setEditDriverName(
-      result.driver?.fullName 
-        ? `${result.driver.fullName}${result.driver.tractorName && result.driver.tractorName.length > 0 ? ` (${result.driver.tractorName.join(", ")})` : ""}` 
-        : "Unknown Driver"
-    );
-    setEditDistance(String(result.distance || ""));
-    setEditPoint(String(result.point ?? ""));
+    setEditingResult(result);
     setIsEditModalOpen(true);
-  };
-
-  const handleUpdateResult = async () => {
-    if (!editEventId) {
-      toast.error("Please select an event");
-      return;
-    }
-    if (!editClassName) {
-      toast.error("Please select a class");
-      return;
-    }
-    if (!editDriverId) {
-      toast.error("Please select a driver");
-      return;
-    }
-    if (!editDistance || isNaN(Number(editDistance)) || Number(editDistance) <= 0) {
-      toast.error("Please enter a valid positive distance");
-      return;
-    }
-    if (!editPoint || isNaN(Number(editPoint)) || Number(editPoint) < 0) {
-      toast.error("Please enter a valid points value");
-      return;
-    }
-
-    setIsEditingSubmitting(true);
-    toast.loading("Updating result...", { id: "result-action" });
-
-    try {
-      const res = await myFetch(`/result/${editingResultId}`, {
-        method: "PATCH",
-        body: {
-          event: editEventId,
-          class: editClassName,
-          driver: editDriverId,
-          distance: Number(editDistance),
-          point: Number(editPoint),
-        },
-      });
-
-      if (res.success) {
-        toast.success("Result updated successfully!", { id: "result-action" });
-        setIsEditModalOpen(false);
-        if (selectedEventId && selectedClassName) {
-          fetchResults(selectedEventId, selectedClassName);
-        }
-      } else {
-        toast.error(res.message || "Failed to update result", { id: "result-action" });
-      }
-    } catch (error) {
-      console.error("Error updating result:", error);
-      toast.error("An error occurred while updating result", { id: "result-action" });
-    } finally {
-      setIsEditingSubmitting(false);
-    }
   };
 
   // Delete result entry
@@ -229,9 +65,7 @@ export default function ResultsView({}: ResultsViewProps) {
 
       if (res.success) {
         toast.success("Result deleted successfully!", { id: "result-action" });
-        if (selectedEventId && selectedClassName) {
-          fetchResults(selectedEventId, selectedClassName);
-        }
+        fetchResults();
       } else {
         toast.error(res.message || "Failed to delete result entry", { id: "result-action" });
       }
@@ -243,7 +77,6 @@ export default function ResultsView({}: ResultsViewProps) {
 
   // Available classes derived dynamically from selected events
   const filterAvailableClasses = selectedEvent?.class || [];
-  const modalAvailableClasses = modalSelectedEvent?.class || [];
 
   return (
     <div className="flex flex-col w-full h-full max-w-[1200px] mx-auto pb-20 px-4 sm:px-6">
@@ -256,144 +89,7 @@ export default function ResultsView({}: ResultsViewProps) {
           </p>
         </div>
 
-        {/* Dynamic Modal Add Trigger */}
-        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-[#3b82f6] hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 shadow-sm self-start sm:self-auto active:scale-[0.98]">
-              <Plus className="w-4 h-4" />
-              Add New Result
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl bg-white shadow-xl overflow-hidden">
-            <div className="p-8 w-full max-w-full">
-              <DialogHeader className="mb-6">
-                <DialogTitle className="text-2xl font-bold text-center text-gray-800 flex items-center justify-center gap-2">
-                  <Trophy className="w-6 h-6 text-yellow-500 animate-bounce" />
-                  Add Competitor Result
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-5">
-                {/* Reusable Searchable Infinite Select for Modal Event */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="modalEvent" className="text-gray-600 font-medium">Event</Label>
-                  <SearchableInfiniteSelect
-                    endpoint="/event"
-                    fields="_id,name,class"
-                    placeholder="Select Event"
-                    value={modalEventId}
-                    onChange={(value, event) => {
-                      setModalEventId(value);
-                      setModalSelectedEvent(event);
-                      setModalClassName(""); // Reset class when event changes
-                      setModalDriverId(""); // Reset driver when event changes
-                    }}
-                    displayValue={(evt) => evt.name}
-                  />
-                </div>
-
-                {/* Class Selector in Modal (Dependent on Selected Event) */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="modalClass" className="text-gray-600 font-medium">Competitor Class</Label>
-                  <div className="relative">
-                    <select
-                      id="modalClass"
-                      value={modalClassName}
-                      disabled={!modalEventId}
-                      onChange={(e) => {
-                        setModalClassName(e.target.value);
-                        setModalDriverId(""); // Reset driver when class changes
-                      }}
-                      className="flex h-12 w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-[#3b82f6] cursor-pointer transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
-                    >
-                      <option value="">
-                        {!modalEventId ? "Please select event first" : "Select Class"}
-                      </option>
-                      {modalAvailableClasses.map((cls: any) => (
-                        <option key={cls.name || cls} value={cls.name || cls}>
-                          {cls.name || cls}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-4 h-4 w-4 text-gray-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Reusable Searchable Infinite Select for Modal Driver */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="modalDriver" className="text-gray-600 font-medium">Driver</Label>
-                  <SearchableInfiniteSelect
-                    endpoint={modalEventId && modalClassName ? "/event-registration" : "/user"}
-                    fields="_id,email,fullName,tractorName,phone"
-                    extraParams={
-                      modalEventId && modalClassName
-                        ? { event: modalEventId, class: modalClassName, status: "approved" }
-                        : { role: "driver" }
-                    }
-                    transformData={
-                      modalEventId && modalClassName
-                        ? (registrations) =>
-                            registrations
-                              .filter((reg: any) => reg.driver)
-                              .map((reg: any) => ({
-                                ...reg.driver,
-                                _id: reg.driver._id,
-                              }))
-                        : undefined
-                    }
-                    placeholder={
-                      !modalEventId || !modalClassName
-                        ? "Please select Event & Class first"
-                        : "Select Driver"
-                    }
-                    disabled={!modalEventId || !modalClassName}
-                    value={modalDriverId}
-                    onChange={(value) => setModalDriverId(value)}
-                    displayValue={(driver) =>
-                      `${driver.fullName}${driver.tractorName && driver.tractorName.length > 0 ? ` (${driver.tractorName.join(", ")})` : ""}`
-                    }
-                  />
-                </div>
-
-                {/* Distance in Modal */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="modalDistance" className="text-gray-600 font-medium">Distance (ft)</Label>
-                  <Input
-                    id="modalDistance"
-                    type="number"
-                    step="0.01"
-                    value={modalDistance}
-                    onChange={(e) => setModalDistance(e.target.value)}
-                    placeholder="e.g., 250.50"
-                    className="h-12 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
-                  />
-                </div>
-
-                {/* Points in Modal */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="modalPoint" className="text-gray-600 font-medium">Points</Label>
-                  <Input
-                    id="modalPoint"
-                    type="number"
-                    value={modalPoint}
-                    onChange={(e) => setModalPoint(e.target.value)}
-                    placeholder="e.g., 50"
-                    className="h-12 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleAddResult}
-                  disabled={isSubmitting}
-                  className="w-full bg-[#3b82f6] hover:bg-blue-600 text-white h-12 rounded-lg text-base mt-4 flex items-center justify-center gap-2 font-semibold transition-all active:scale-[0.99]"
-                >
-                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Record Result
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <AddResultModal onSuccess={handleAddSuccess} />
       </div>
 
       {/* Dynamic Filters Section */}
@@ -469,7 +165,7 @@ export default function ResultsView({}: ResultsViewProps) {
             </div>
             <h3 className="text-lg font-bold text-gray-800 mb-1">No pull results found</h3>
             <p className="text-gray-500 text-sm max-w-md mx-auto">
-              There are no official result entries recorded for this category yet. Click "Add New Result" to record the first standings.
+              There are no official result entries recorded for this category yet. Click &quot;Add New Result&quot; to record the first standings.
             </p>
           </div>
         ) : (
@@ -586,114 +282,13 @@ export default function ResultsView({}: ResultsViewProps) {
         )}
       </div>
 
-      {/* Edit Result Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 border-0 rounded-2xl bg-white shadow-xl overflow-hidden">
-          <div className="p-8 w-full max-w-full">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-bold text-center text-gray-800 flex items-center justify-center gap-2">
-                <Trophy className="w-6 h-6 text-yellow-500 animate-bounce" />
-                Update Competitor Result
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-5">
-              {/* Event Select */}
-              <div className="space-y-1.5">
-                <Label htmlFor="editEvent" className="text-gray-600 font-medium">Event</Label>
-                <SearchableInfiniteSelect
-                  endpoint="/event"
-                  fields="_id,name,class"
-                  placeholder="Select Event"
-                  value={editEventId}
-                  onChange={(value, event) => {
-                    setEditEventId(value);
-                    setEditSelectedEvent(event);
-                    setEditClassName(""); 
-                    setEditDriverId("");
-                  }}
-                  displayValue={(evt) => evt.name}
-                />
-              </div>
-
-              {/* Class Selector */}
-              <div className="space-y-1.5">
-                <Label htmlFor="editClass" className="text-gray-600 font-medium">Competitor Class</Label>
-                <div className="relative">
-                  <select
-                    id="editClass"
-                    value={editClassName}
-                    disabled={!editEventId}
-                    onChange={(e) => {
-                      setEditClassName(e.target.value);
-                      setEditDriverId("");
-                    }}
-                    className="flex h-12 w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-[#3b82f6] cursor-pointer transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
-                  >
-                    <option value="">
-                      {!editEventId ? "Please select event first" : "Select Class"}
-                    </option>
-                    {(editSelectedEvent?.class || []).map((cls: any) => (
-                      <option key={cls.name || cls} value={cls.name || cls}>
-                        {cls.name || cls}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-4 h-4 w-4 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Driver Select */}
-              <div className="space-y-1.5">
-                <Label htmlFor="editDriver" className="text-gray-600 font-medium">Driver</Label>
-                <Input
-                  id="editDriver"
-                  type="text"
-                  value={editDriverName}
-                  disabled={true}
-                  className="h-12 border-gray-200 bg-gray-50 text-gray-500 rounded-lg text-sm cursor-not-allowed font-semibold"
-                />
-              </div>
-
-              {/* Distance */}
-              <div className="space-y-1.5">
-                <Label htmlFor="editDistance" className="text-gray-600 font-medium">Distance (ft)</Label>
-                <Input
-                  id="editDistance"
-                  type="number"
-                  step="0.01"
-                  value={editDistance}
-                  onChange={(e) => setEditDistance(e.target.value)}
-                  placeholder="e.g., 250.50"
-                  className="h-12 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
-                />
-              </div>
-
-              {/* Points */}
-              <div className="space-y-1.5">
-                <Label htmlFor="editPoint" className="text-gray-600 font-medium">Points</Label>
-                <Input
-                  id="editPoint"
-                  type="number"
-                  value={editPoint}
-                  onChange={(e) => setEditPoint(e.target.value)}
-                  placeholder="e.g., 50"
-                  className="h-12 border-gray-200 focus-visible:ring-[#3b82f6]/50 rounded-lg text-sm"
-                />
-              </div>
-
-              <Button
-                onClick={handleUpdateResult}
-                disabled={isEditingSubmitting}
-                className="w-full bg-[#3b82f6] hover:bg-blue-600 text-white h-12 rounded-lg text-base mt-4 flex items-center justify-center gap-2 font-semibold transition-all active:scale-[0.99]"
-              >
-                {isEditingSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                Update Result
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Refactored Modular Edit Result Modal */}
+      <EditResultModal
+        isOpen={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        result={editingResult}
+        onSuccess={fetchResults}
+      />
     </div>
   );
 }
