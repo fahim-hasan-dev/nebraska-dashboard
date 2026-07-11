@@ -51,8 +51,8 @@ export default function HelpSupportView() {
 
       if (res.success && res.data) {
         // Handle paginated QueryBuilder results or pure arrays
-        const list = Array.isArray(res.data) 
-          ? res.data 
+        const list = Array.isArray(res.data)
+          ? res.data
           : (res.data?.data && Array.isArray(res.data.data) ? res.data.data : []);
         setTicketsList(list);
         setHasLoadedFromApi(true);
@@ -78,7 +78,7 @@ export default function HelpSupportView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  
+
   useEffect(() => {
     if (page === 1) {
       fetchTickets();
@@ -183,9 +183,9 @@ export default function HelpSupportView() {
             </div>
           ) : (
             <>
-              <HelpSupportTable 
-                tickets={filteredTickets} 
-                onView={(ticket) => setSelectedTicket(ticket)} 
+              <HelpSupportTable
+                tickets={filteredTickets}
+                onView={(ticket) => setSelectedTicket(ticket)}
                 onDelete={handleDeleteTicket}
               />
 
@@ -195,9 +195,9 @@ export default function HelpSupportView() {
           )}
         </div>
       ) : (
-        <HelpSupportDetail 
-          ticket={selectedTicket} 
-          onBack={() => setSelectedTicket(null)} 
+        <HelpSupportDetail
+          ticket={selectedTicket}
+          onBack={() => setSelectedTicket(null)}
           onResolve={handleResolveTicket}
         />
       )}
