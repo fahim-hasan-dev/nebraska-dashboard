@@ -25,13 +25,15 @@ export function AddDriverModal({ children, onSuccess }: AddDriverModalProps) {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [selectedClassName, setSelectedClassName] = useState<string>("");
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
+  const [selectedDriver, setSelectedDriver] = useState<any>(null);
+  const [selectedTractor, setSelectedTractor] = useState<string>("");
   const [note, setNote] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const classesList = selectedEvent?.class || [];
 
   const handleRegisterDriver = async () => {
-    if (!selectedEventId || !selectedClassName || !selectedDriverId) {
+    if (!selectedEventId || !selectedClassName || !selectedDriverId || !selectedTractor) {
       toast.error("Please select all required fields.");
       return;
     }
@@ -44,6 +46,7 @@ export function AddDriverModal({ children, onSuccess }: AddDriverModalProps) {
           event: selectedEventId,
           class: selectedClassName,
           driver: selectedDriverId,
+          tractor: selectedTractor,
           note: note.trim() || undefined,
         },
       });
@@ -74,6 +77,8 @@ export function AddDriverModal({ children, onSuccess }: AddDriverModalProps) {
         setSelectedEvent(null);
         setSelectedClassName("");
         setSelectedDriverId("");
+        setSelectedDriver(null);
+        setSelectedTractor("");
         setNote("");
       }
     }}>
@@ -142,22 +147,51 @@ export function AddDriverModal({ children, onSuccess }: AddDriverModalProps) {
           {/* Driver Searchable infinite select */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-gray-600">
-              Driver
+              Driver *
             </label>
             <SearchableInfiniteSelect
               endpoint="/user"
-              fields="_id,email,fullName,vehicleName,phone"
+              fields="_id,email,fullName,tractorName,phone"
               extraParams={{ role: "driver" }}
               placeholder="Select Driver"
               disabled={false}
               value={selectedDriverId}
-              onChange={(value) => setSelectedDriverId(value)}
+              onChange={(value, driver) => {
+                setSelectedDriverId(value);
+                setSelectedDriver(driver);
+                setSelectedTractor(""); // Reset tractor when driver changes
+              }}
               displayValue={(driver) =>
-                `${driver.fullName}${driver.vehicleName ? ` (${driver.vehicleName})` : ""}${
+                `${driver.fullName}${driver.tractorName && driver.tractorName.length > 0 ? ` (${driver.tractorName.join(", ")})` : ""}${
                   driver.phone ? ` - ${driver.phone}` : ""
                 }`
               }
             />
+          </div>
+
+          {/* Dynamic Tractor Select Dropdown */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-semibold text-gray-600">
+              Tractor *
+            </label>
+            <div className="relative">
+              <select
+                value={selectedTractor}
+                disabled={!selectedDriverId}
+                onChange={(e) => setSelectedTractor(e.target.value)}
+                className="flex h-12 w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-[#3b82f6] cursor-pointer disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition-all"
+              >
+                <option value="" disabled>
+                  {!selectedDriverId ? "Select driver first" : "Select Tractor"}
+                </option>
+                {selectedDriver?.tractorName?.map((tractor: string, idx: number) => (
+                  <option key={idx} value={tractor}>
+                    {tractor}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-4 h-4 w-4 text-gray-400 pointer-events-none" />
+            </div>
           </div>
 
           {/* Note Input */}

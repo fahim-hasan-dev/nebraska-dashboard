@@ -26,7 +26,7 @@ export function DriverRequestsTable({ data, onAccept, onDelete }: DriverRequests
               <th className="px-6 py-6 font-semibold">EVENT</th>
               <th className="px-6 py-6 font-semibold">CLASS</th>
               <th className="px-6 py-6 font-semibold">EMAIL & PHONE</th>
-              <th className="px-6 py-6 font-semibold">VEHICLE</th>
+              <th className="px-6 py-6 font-semibold">TRACTOR</th>
               <th className="px-6 py-6 font-semibold">STATUS</th>
               <th className="px-6 py-6 font-semibold text-right">ACTIONS</th>
             </tr>
@@ -44,7 +44,7 @@ export function DriverRequestsTable({ data, onAccept, onDelete }: DriverRequests
                 const eventName = row.event?.name || "N/A";
                 const phone = row.driver?.phone || "N/A";
                 const email = row.driver?.email || "N/A";
-                const vehicle = row.driver?.vehicleName || "N/A";
+                const registeredTractor = row.tractor || "N/A";
                 const regId = row._id || row.id;
 
                 return (
@@ -77,8 +77,8 @@ export function DriverRequestsTable({ data, onAccept, onDelete }: DriverRequests
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5 font-bold text-gray-900">
-                      {vehicle}
+                    <td className="px-6 py-5 font-bold text-[#3b82f6]">
+                      {registeredTractor}
                     </td>
                     <td className="px-6 py-5">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${

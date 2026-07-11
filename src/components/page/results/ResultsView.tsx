@@ -52,15 +52,13 @@ export default function ResultsView({}: ResultsViewProps) {
     if (!eventId || !className) return;
     setIsTableLoading(true);
     try {
-      const res = await myFetch(`/result?event=${eventId}&class=${className}&limit=100`, {
+      const res = await myFetch(`/result?event=${eventId}&class=${className}&limit=100&sort=-point`, {
         method: "GET",
         cache: "no-store",
       });
       if (res.success && res.data) {
-        // Sort results by distance descending so greatest distance is 1st place
         const rawResults = Array.isArray(res.data) ? res.data : (res.data.data || []);
-        const sorted = [...rawResults].sort((a, b) => Number(b.distance) - Number(a.distance));
-        setResultsList(sorted);
+        setResultsList(rawResults);
       } else {
         setResultsList([]);
       }
@@ -159,7 +157,7 @@ export default function ResultsView({}: ResultsViewProps) {
     setEditDriverId(result.driver?._id || result.driver?.id || result.driver || "");
     setEditDriverName(
       result.driver?.fullName 
-        ? `${result.driver.fullName}${result.driver.vehicleName ? ` (${result.driver.vehicleName})` : ""}` 
+        ? `${result.driver.fullName}${result.driver.tractorName && result.driver.tractorName.length > 0 ? ` (${result.driver.tractorName.join(", ")})` : ""}` 
         : "Unknown Driver"
     );
     setEditDistance(String(result.distance || ""));
@@ -326,7 +324,7 @@ export default function ResultsView({}: ResultsViewProps) {
                   <Label htmlFor="modalDriver" className="text-gray-600 font-medium">Driver</Label>
                   <SearchableInfiniteSelect
                     endpoint={modalEventId && modalClassName ? "/event-registration" : "/user"}
-                    fields="_id,email,fullName,vehicleName,phone"
+                    fields="_id,email,fullName,tractorName,phone"
                     extraParams={
                       modalEventId && modalClassName
                         ? { event: modalEventId, class: modalClassName, status: "approved" }
@@ -352,7 +350,7 @@ export default function ResultsView({}: ResultsViewProps) {
                     value={modalDriverId}
                     onChange={(value) => setModalDriverId(value)}
                     displayValue={(driver) =>
-                      `${driver.fullName}${driver.vehicleName ? ` (${driver.vehicleName})` : ""}`
+                      `${driver.fullName}${driver.tractorName && driver.tractorName.length > 0 ? ` (${driver.tractorName.join(", ")})` : ""}`
                     }
                   />
                 </div>
@@ -495,7 +493,7 @@ export default function ResultsView({}: ResultsViewProps) {
                   <tr>
                     <th className="px-6 py-4 text-center">Rank</th>
                     <th className="px-6 py-4">Driver Name</th>
-                    <th className="px-6 py-4">Vehicle/Tractor Name</th>
+                    <th className="px-6 py-4">Tractor</th>
                     <th className="px-6 py-4">Distance (ft)</th>
                     <th className="px-6 py-4">Points</th>
                     <th className="px-6 py-4 text-right">Actions</th>
@@ -529,11 +527,18 @@ export default function ResultsView({}: ResultsViewProps) {
                           {row.driver?.fullName || "Deleted competitor"}
                         </td>
                         <td className="px-6 py-4">
-                          {row.driver?.vehicleName ? (
+                          {row.registration?.tractor ? (
                             <div className="flex items-center gap-1.5 text-gray-600">
                               <Car className="w-4 h-4 text-gray-400" />
                               <span className="font-medium text-xs sm:text-sm bg-gray-100 px-2 py-0.5 rounded-md">
-                                {row.driver.vehicleName}
+                                {row.registration.tractor}
+                              </span>
+                            </div>
+                          ) : row.driver?.tractorName && row.driver.tractorName.length > 0 ? (
+                            <div className="flex items-center gap-1.5 text-gray-600">
+                              <Car className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium text-xs sm:text-sm bg-gray-100 px-2 py-0.5 rounded-md">
+                                {row.driver.tractorName.join(", ")}
                               </span>
                             </div>
                           ) : (

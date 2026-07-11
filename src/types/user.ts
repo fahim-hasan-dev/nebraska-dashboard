@@ -7,6 +7,7 @@ export interface IUser {
   role: "admin" | "fan" | "driver";
   verified: boolean;
   status: "active" | "restricted" | "deleted";
-  vehicleName?: string;
+  tractorName?: string[];
   image?: string;
+  adminCreated?: boolean;
 }

@@ -12,7 +12,7 @@ const ResultsPage = async () => {
       myFetch("/event?limit=100&fields=_id,name,class", {
         method: "GET",
       }),
-      myFetch("/user?role=driver&limit=100&fields=_id,email,fullName,vehicleName", {
+      myFetch("/user?role=driver&limit=100&fields=_id,email,fullName,tractorName", {
         method: "GET",
       }),
     ]);

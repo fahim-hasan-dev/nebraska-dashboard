@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,23 +12,34 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Loader2, Key, Plus, Trash } from "lucide-react";
+import { Pencil, Loader2, Plus, Trash } from "lucide-react";
 import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
+import { IUser } from "@/types/user";
 
-interface CreateDriverModalProps {
+interface EditDriverModalProps {
+  driver: IUser;
   children: React.ReactNode;
   onSuccess?: () => void;
 }
 
-export default function CreateDriverModal({ children, onSuccess }: CreateDriverModalProps) {
+export default function EditDriverModal({ driver, children, onSuccess }: EditDriverModalProps) {
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [tractorNames, setTractorNames] = useState<string[]>([""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCreateDriver = async (e: React.FormEvent) => {
+  // Sync state with driver details when modal opens or driver changes
+  useEffect(() => {
+    if (open && driver) {
+      setFullName(driver.fullName || "");
+      setPhone(driver.phone || "");
+      setTractorNames(driver.tractorName && driver.tractorName.length > 0 ? [...driver.tractorName] : [""]);
+    }
+  }, [open, driver]);
+
+  const handleEditDriver = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!fullName.trim()) return toast.error("Full Name is required");
@@ -40,11 +51,11 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
     }
 
     setIsSubmitting(true);
-    toast.loading("Creating driver account...", { id: "create-driver" });
+    toast.loading("Updating driver account...", { id: "edit-driver" });
 
     try {
-      const res = await myFetch("/user/create-driver", {
-        method: "POST",
+      const res = await myFetch(`/user/driver/${driver._id}`, {
+        method: "PATCH",
         body: {
           fullName: fullName.trim(),
           phone: phone.trim(),
@@ -53,47 +64,35 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
       });
 
       if (res.success) {
-        toast.success("Driver account created successfully!", { id: "create-driver" });
+        toast.success("Driver account updated successfully!", { id: "edit-driver" });
         setOpen(false);
-        // Reset form
-        setFullName("");
-        setPhone("");
-        setTractorNames([""]);
         if (onSuccess) {
           onSuccess();
         }
       } else {
-        toast.error(res.message || "Failed to create driver account.", { id: "create-driver" });
+        toast.error(res.message || "Failed to update driver account.", { id: "edit-driver" });
       }
     } catch (error) {
-      console.error("Error creating driver:", error);
-      toast.error("An error occurred during account creation.", { id: "create-driver" });
+      console.error("Error updating driver:", error);
+      toast.error("An error occurred during account update.", { id: "edit-driver" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(val) => {
-      setOpen(val);
-      if (!val) {
-        // Reset on close
-        setFullName("");
-        setPhone("");
-        setTractorNames([""]);
-      }
-    }}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[480px] p-0 border-0 rounded-2xl bg-white shadow-xl">
         <DialogHeader className="p-6 pb-4 flex flex-row items-center justify-between border-b border-gray-100">
           <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-[#3b82f6]" />
-            Create Driver Account
+            <Pencil className="w-5 h-5 text-[#3b82f6]" />
+            Edit Driver Account
           </DialogTitle>
           <DialogClose className="text-gray-400 hover:text-gray-600 outline-none" />
         </DialogHeader>
 
-        <form onSubmit={handleCreateDriver} className="px-6 py-6 flex flex-col gap-4 max-h-[75vh] overflow-y-auto">
+        <form onSubmit={handleEditDriver} className="px-6 py-6 flex flex-col gap-4 max-h-[75vh] overflow-y-auto">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="fullName">Full Name *</Label>
             <Input
@@ -167,7 +166,7 @@ export default function CreateDriverModal({ children, onSuccess }: CreateDriverM
               className="flex-1 h-11 bg-[#3b82f6] text-white hover:bg-blue-600 font-bold"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Create Driver
+              Save Changes
             </Button>
             <DialogClose asChild>
               <Button

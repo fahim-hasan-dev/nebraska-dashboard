@@ -150,7 +150,8 @@ export default function DriverRequestsView() {
     const driverName = reg.driver?.fullName || "";
     const email = reg.driver?.email || "";
     const phone = reg.driver?.phone || "";
-    const vehicle = reg.driver?.vehicleName || "";
+    const tractors = reg.driver?.tractorName?.join(", ") || "";
+    const registeredTractor = reg.tractor || "";
     const eventName = reg.event?.name || "";
     const className = reg.class || "";
 
@@ -158,7 +159,8 @@ export default function DriverRequestsView() {
       driverName.toLowerCase().includes(search) ||
       email.toLowerCase().includes(search) ||
       phone.toLowerCase().includes(search) ||
-      vehicle.toLowerCase().includes(search) ||
+      tractors.toLowerCase().includes(search) ||
+      registeredTractor.toLowerCase().includes(search) ||
       eventName.toLowerCase().includes(search) ||
       className.toLowerCase().includes(search)
     );

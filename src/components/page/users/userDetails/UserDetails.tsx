@@ -108,10 +108,12 @@ const UserDetails = ({ user }: UserDetailsProps) => {
           <div className="grid grid-cols-[100px_1fr] gap-4 items-start py-1">
             <span className="text-gray-400 flex items-center gap-1.5 font-semibold">
               <Truck className="w-4 h-4 text-gray-400 shrink-0" />
-              Vehicle
+              Tractors
             </span>
             <span className="text-amber-600 break-words font-bold">
-              {user.vehicleName || "Not provided"}
+              {user.tractorName && user.tractorName.length > 0
+                ? user.tractorName.join(", ")
+                : "Not provided"}
             </span>
           </div>
         )}

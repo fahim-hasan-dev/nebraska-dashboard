@@ -4,14 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { IUser } from "@/types/user";
 import { ColumnDef } from "@tanstack/react-table";
-import { Eye, Trash } from "lucide-react";
+import { Eye, Trash, Pencil } from "lucide-react";
 import DeleteModal from "../modals/DeleteModal";
 import Modal from "../modals/Modal";
 import UserDetails from "../page/users/userDetails/UserDetails";
+import EditDriverModal from "../page/users/EditDriverModal";
 
 // table column definition creator
 export const createUserTableColumns = (
-  onDelete: (id: string) => Promise<void>
+  onDelete: (id: string) => Promise<void>,
+  onUpdateSuccess?: () => void
 ): ColumnDef<IUser>[] => [
   {
     id: "slNo",
@@ -104,6 +106,15 @@ export const createUserTableColumns = (
           >
             <UserDetails user={item} />
           </Modal>
+
+          {/* Render edit option conditionally: Only for drivers created by the admin who haven't completed manual signup */}
+          {item.role === "driver" && item.adminCreated && !item.email && (
+            <EditDriverModal driver={item} onSuccess={onUpdateSuccess}>
+              <Button variant="ghost" size="icon" className="text-amber-500 hover:bg-amber-50 hover:text-amber-600">
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </EditDriverModal>
+          )}
 
           <DeleteModal
             triggerBtn={

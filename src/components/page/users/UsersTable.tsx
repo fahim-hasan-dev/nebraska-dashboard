@@ -93,7 +93,7 @@ const UsersTable = ({ users = [], filters, meta }: UsersTableProps) => {
     }
   }, [router]);
 
-  const columns = React.useMemo(() => createUserTableColumns(handleDeleteUser), [handleDeleteUser]);
+  const columns = React.useMemo(() => createUserTableColumns(handleDeleteUser, () => router.refresh()), [handleDeleteUser, router]);
 
   const table = useReactTable<IUser>({
     data: users || [],
