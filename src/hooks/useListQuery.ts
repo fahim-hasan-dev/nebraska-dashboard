@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { myFetch } from "@/utils/myFetch";
 import toast from "react-hot-toast";
 
@@ -31,17 +31,23 @@ export function useListQuery<T>({
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Dynamic filter states (like eventId, className, status, etc.)
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  // Custom dynamic filter states (updated via updateFilters)
+  const [customFilters, setCustomFilters] = useState<Record<string, string>>({});
 
-  // Sync dynamic filters when initialParams change
+  // Sync initialParams and customFilters
   const initialParamsString = JSON.stringify(initialParams);
-  useEffect(() => {
-    const rest = { ...initialParams };
+  const filters = useMemo(() => {
+    const rest = JSON.parse(initialParamsString);
     delete rest.limit;
-    setFilters(rest);
-    setPage(1); // Reset to page 1 when filters change
-  }, [initialParamsString]);
+    return { ...rest, ...customFilters };
+  }, [initialParamsString, customFilters]);
+
+  // Adjust state synchronously when initialParams change to avoid double rendering
+  const [prevParamsString, setPrevParamsString] = useState(initialParamsString);
+  if (initialParamsString !== prevParamsString) {
+    setPrevParamsString(initialParamsString);
+    setPage(1);
+  }
 
   // Debounce the search input changes
   useEffect(() => {
@@ -53,6 +59,8 @@ export function useListQuery<T>({
     return () => clearTimeout(timer);
   }, [searchTerm, debounceMs]);
 
+  const requestCountRef = useRef(0);
+
   // Main data fetching logic
   const fetchData = useCallback(async () => {
     if (skip) {
@@ -61,6 +69,7 @@ export function useListQuery<T>({
       return;
     }
 
+    const currentRequestId = ++requestCountRef.current;
     setIsLoading(true);
     try {
       const queryParams = new URLSearchParams();
@@ -83,6 +92,10 @@ export function useListQuery<T>({
         method: "GET",
         cache: "no-store",
       });
+
+      if (currentRequestId !== requestCountRef.current) {
+        return;
+      }
 
       if (res.success && res.data) {
         // Standardize different API response list layouts (res.data, data, admins, users, events)
@@ -115,7 +128,9 @@ export function useListQuery<T>({
       console.error(`Error loading data from ${endpoint}:`, error);
       toast.error("Failed to load records from server");
     } finally {
-      setIsLoading(false);
+      if (currentRequestId === requestCountRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [endpoint, page, limit, debouncedSearch, filters, skip]);
 
@@ -126,7 +141,7 @@ export function useListQuery<T>({
 
   // Helper function to update filters cleanly
   const updateFilters = useCallback((newFilters: Record<string, string>) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
+    setCustomFilters((prev) => ({ ...prev, ...newFilters }));
     setPage(1); // Reset page on filter changes
   }, []);
 
