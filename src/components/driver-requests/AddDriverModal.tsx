@@ -161,11 +161,7 @@ export function AddDriverModal({ children, onSuccess }: AddDriverModalProps) {
                 setSelectedDriver(driver);
                 setSelectedTractor(""); // Reset tractor when driver changes
               }}
-              displayValue={(driver) =>
-                `${driver.fullName}${driver.tractorName && driver.tractorName.length > 0 ? ` (${driver.tractorName.join(", ")})` : ""}${
-                  driver.phone ? ` - ${driver.phone}` : ""
-                }`
-              }
+              displayValue={(driver) => driver.fullName}
             />
           </div>
 

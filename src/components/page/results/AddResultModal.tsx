@@ -194,12 +194,7 @@ export default function AddResultModal({ onSuccess }: AddResultModalProps) {
                       value={field.value}
                       disabled={!watchClass}
                       onChange={(value) => field.onChange(value)}
-                      displayValue={(driver) => {
-                        const tractors = driver.tractorName && driver.tractorName.length > 0
-                          ? ` (${driver.tractorName.join(", ")})`
-                          : "";
-                        return `${driver.fullName}${tractors}`;
-                      }}
+                      displayValue={(driver) => driver.fullName}
                       transformData={(data) =>
                         data.map((reg: { driver?: { _id: string; fullName: string; tractorName?: string[] } }) => reg.driver).filter(Boolean)
                       }
