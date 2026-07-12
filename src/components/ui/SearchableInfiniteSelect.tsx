@@ -7,6 +7,7 @@ import { myFetch } from "@/utils/myFetch";
 interface SearchableInfiniteSelectProps {
   placeholder?: string;
   endpoint: string;
+  detailEndpoint?: string;
   fields?: string;
   extraParams?: Record<string, string>;
   value: string;
@@ -20,6 +21,7 @@ interface SearchableInfiniteSelectProps {
 export default function SearchableInfiniteSelect({
   placeholder = "Select option",
   endpoint,
+  detailEndpoint,
   fields,
   extraParams = {},
   value,
@@ -116,7 +118,7 @@ export default function SearchableInfiniteSelect({
       // Retrieve individual selected item details if not yet in loaded items
       const fetchDetail = async () => {
         try {
-          const res = await myFetch(`${endpoint}/${value}`, { method: "GET" });
+          const res = await myFetch(`${detailEndpoint || endpoint}/${value}`, { method: "GET" });
           if (res.success && res.data) {
             let itemData = res.data;
             if (transformData) {
@@ -132,7 +134,7 @@ export default function SearchableInfiniteSelect({
       };
       fetchDetail();
     }
-  }, [value, items, endpoint, transformData]);
+  }, [value, items, endpoint, detailEndpoint, transformData]);
 
   // Handle open dropdown
   const toggleDropdown = () => {

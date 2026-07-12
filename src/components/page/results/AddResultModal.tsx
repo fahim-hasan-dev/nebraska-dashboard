@@ -182,8 +182,14 @@ export default function AddResultModal({ onSuccess }: AddResultModalProps) {
                   <FormLabel className="text-gray-600 font-medium">Driver</FormLabel>
                   <FormControl>
                     <SearchableInfiniteSelect
-                      endpoint="/user/driver"
-                      fields="_id,fullName,tractorName"
+                      endpoint="/event-registration"
+                      detailEndpoint="/user"
+                      fields="_id,driver,event,class"
+                      extraParams={{
+                        event: watchEvent,
+                        class: watchClass,
+                        status: "approved",
+                      }}
                       placeholder="Select Driver"
                       value={field.value}
                       disabled={!watchClass}
@@ -194,6 +200,9 @@ export default function AddResultModal({ onSuccess }: AddResultModalProps) {
                           : "";
                         return `${driver.fullName}${tractors}`;
                       }}
+                      transformData={(data) =>
+                        data.map((reg: { driver?: { _id: string; fullName: string; tractorName?: string[] } }) => reg.driver).filter(Boolean)
+                      }
                     />
                   </FormControl>
                   <FormMessage />
