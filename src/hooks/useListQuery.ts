@@ -36,7 +36,7 @@ export function useListQuery<T>({
 
   // Sync initialParams and customFilters
   const initialParamsString = JSON.stringify(initialParams);
-  const filters = useMemo(() => {
+  const filters: Record<string, string> = useMemo(() => {
     const rest = JSON.parse(initialParamsString);
     delete rest.limit;
     return { ...rest, ...customFilters };
