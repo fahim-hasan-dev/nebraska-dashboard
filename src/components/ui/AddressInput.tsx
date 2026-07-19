@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import React, { useEffect, useRef } from "react";
+import { Loader2, X } from "lucide-react";
 import { useAddressAutocomplete } from "@/hooks/useAddressAutocomplete";
 
 interface AddressInputProps {
@@ -55,10 +55,21 @@ export default function AddressInput({
     }
   };
 
+  const onCoordinatesChangeRef = useRef(onCoordinatesChange);
+  useEffect(() => {
+    onCoordinatesChangeRef.current = onCoordinatesChange;
+  }, [onCoordinatesChange]);
+
   // Bubble up coordinate changes when suggestions are selected
   useEffect(() => {
-    onCoordinatesChange(coordinates);
-  }, [coordinates, onCoordinatesChange]);
+    onCoordinatesChangeRef.current(coordinates);
+  }, [coordinates]);
+
+  // Wrap select to notify parent component's state
+  const handleSuggestionSelect = (suggestion: { description: string; placeId: string }) => {
+    handleSelect(suggestion);
+    onChange(suggestion.description);
+  };
 
   return (
     <div className="flex flex-col gap-2 relative w-full" ref={containerRef}>
@@ -68,7 +79,7 @@ export default function AddressInput({
         </label>
       )}
       
-      <div className="relative">
+      <div className="relative flex items-center">
         <input
           type="text"
           value={venue}
@@ -77,16 +88,30 @@ export default function AddressInput({
             if (suggestions.length > 0) setShowSuggestions(true);
           }}
           placeholder={placeholder}
-          className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 pr-20"
+          className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 pr-28"
           required={required}
         />
 
-        {/* Locked geocode badge */}
-        {coordinates && (
-          <span className="text-[10px] text-green-600 font-bold absolute right-2.5 top-2 bg-green-50 px-1.5 py-1 rounded border border-green-200 pointer-events-none select-none">
-            ✓ Geocoded
-          </span>
-        )}
+        <div className="absolute right-2.5 flex items-center gap-1.5">
+          {/* Clear / Cross button */}
+          {venue && (
+            <button
+              type="button"
+              onClick={() => handleVenueChange("")}
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-200"
+              title="Clear location"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Locked geocode badge */}
+          {coordinates && (
+            <span className="text-[10px] text-green-600 font-bold bg-green-50 px-1.5 py-1 rounded border border-green-200 pointer-events-none select-none">
+              ✓ Geocoded
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Suggestions dropdown popover overlay */}
@@ -101,7 +126,7 @@ export default function AddressInput({
             <button
               key={idx}
               type="button"
-              onClick={() => handleSelect(s)}
+              onClick={() => handleSuggestionSelect(s)}
               className="w-full text-left px-4 py-2.5 hover:bg-gray-50 text-xs font-semibold text-gray-700 truncate block transition-colors"
             >
               {s.description}

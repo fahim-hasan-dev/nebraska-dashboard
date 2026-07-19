@@ -26,9 +26,6 @@ export function useAddressAutocomplete({
     setValue(initialValue);
   }, [initialValue]);
 
-  useEffect(() => {
-    setCoordinates(initialCoordinates);
-  }, [initialCoordinates]);
 
   // Click outside to close suggestion dropdown
   useEffect(() => {

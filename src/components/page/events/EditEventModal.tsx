@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Edit, UploadCloud, X, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import BaseModal from "@/components/ui/BaseModal";
@@ -211,10 +211,18 @@ export default function EditEventModal({ event, onSuccess }: EditEventModalProps
     }
   };
 
-  const initCoordinates = event?.location?.coordinates && event.location.coordinates.length === 2 ? {
-    lng: event.location.coordinates[0],
-    lat: event.location.coordinates[1],
-  } : null;
+  const coordLng = event?.location?.coordinates?.[0];
+  const coordLat = event?.location?.coordinates?.[1];
+
+  const initCoordinates = useMemo(() => {
+    if (coordLng !== undefined && coordLat !== undefined) {
+      return {
+        lng: coordLng,
+        lat: coordLat,
+      };
+    }
+    return null;
+  }, [coordLng, coordLat]);
 
   return (
     <>

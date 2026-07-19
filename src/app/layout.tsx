@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${poppins.className} antialiased bg-gradient-to-tl from-[#d3cfc5] to-[#e9e7e2] min-h-screen`}
       >
