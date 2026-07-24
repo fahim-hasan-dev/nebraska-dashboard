@@ -28,6 +28,7 @@ const UsersPage = async ({ searchParams }: UsersPageProps) => {
     // Fetch users from backend api
     const res = await myFetch(`/user?${queryParams.toString()}`, {
       method: "GET",
+      cache:"no-store"
     });
 
     if (res.success && res.data) {
